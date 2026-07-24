@@ -126,6 +126,40 @@
             grid-template-columns: 1fr;
         }
     }
+
+    &--list {
+        grid-template-columns: 1fr !important;
+        max-width: 900px;
+        margin: 0 auto;
+
+        .week-day-tile {
+            flex-direction: row;
+            gap: 1rem;
+            min-height: auto;
+            align-items: flex-start;
+        }
+
+        .week-day-header {
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 70px;
+            gap: 0.125rem;
+        }
+
+        .week-day-date {
+            margin-left: 0;
+        }
+
+        .week-day-entries {
+            flex: 1;
+        }
+
+        .week-day-add {
+            width: auto;
+            margin-top: 0;
+            margin-left: auto;
+        }
+    }
 }
 
 .week-day-tile {
@@ -173,11 +207,16 @@
     padding: 0.25rem 0;
     border-bottom: 1px solid #e0e0e0;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
 
     &:last-child {
         border-bottom: none;
+    }
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     &__info {
