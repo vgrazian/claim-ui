@@ -72,12 +72,14 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
 
     // Pivot: rows by opportunity (comment), columns by day
     const { oppRows, grandTotal } = useMemo(() => {
-        const presales = claims.filter((c) => c.activityType === 'presales');
+        const presales = claims.filter(
+            (c) => c.activityType === 'presales' && c.workItem && c.workItem.trim()
+        );
 
         // Group by comment (opportunity number)
         const map = new Map<string, OppRow>();
         presales.forEach((c) => {
-            const opp = (c.comment || c.customer || 'No opportunity #').trim();
+            const opp = c.workItem.trim();
             if (!map.has(opp)) {
                 map.set(opp, {
                     opportunity: opp,
@@ -103,7 +105,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             await navigator.clipboard.writeText(opp);
             setCopiedOpp(opp);
             setTimeout(() => setCopiedOpp(null), 2000);
-        } catch {}
+        } catch { }
     };
 
     return (
