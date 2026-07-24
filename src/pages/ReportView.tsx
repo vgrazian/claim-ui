@@ -39,6 +39,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+    const [copiedText, setCopiedText] = useState<string | null>(null);
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
 
@@ -120,16 +121,15 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         { key: 'totalHours', header: t('report.totalHours') },
     ];
 
-    const copyToClipboard = async (idx: number) => {
-        const row = reportRows[idx];
-        if (!row) return;
-        const text = `${row.customer} - ${row.workItem}: ${row.totalHours}h`;
+    const copyToClipboard = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
-            setCopiedIndex(idx);
+            setCopiedIndex(Date.now()); // use as signal
             setTimeout(() => setCopiedIndex(null), 2000);
         } catch { }
     };
+
+    const [copiedText, setCopiedText] = useState<string | null>(null);
 
     return (
         <div className="page-container">
@@ -184,22 +184,29 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                                 <TableRow {...getRowProps({ row })} key={row.id}>
                                                     {row.cells.map((cell: any) => {
                                                         const isTotal = cell.info?.header === 'totalHours';
+                                                        const isWorkItem = cell.info?.header === 'workItem';
+                                                        const isComment = cell.info?.header === 'comment';
                                                         const isDay = dayColumns.includes(cell.info?.header);
                                                         const isWeekend = isDay && weekendDates.has(cell.info?.header);
                                                         return (
                                                             <TableCell key={cell.id} className={isWeekend ? 'report-weekend-col' : ''}>
                                                                 {isTotal ? (
+                                                                    <Tag type="blue" size="sm">{cell.value}h</Tag>
+                                                                ) : (isWorkItem || isComment) && cell.value ? (
                                                                     <div className="report-cell-actions">
-                                                                        <Tag type="blue" size="sm">{cell.value}h</Tag>
+                                                                        <span>{cell.value}</span>
                                                                         <Button
                                                                             kind="ghost"
                                                                             size="sm"
                                                                             hasIconOnly
                                                                             renderIcon={Copy}
                                                                             iconDescription={t('app.copy')}
-                                                                            onClick={() => copyToClipboard(idx)}
+                                                                            onClick={() => {
+                                                                                copyToClipboard(cell.value);
+                                                                                setCopiedText(cell.value);
+                                                                            }}
                                                                         />
-                                                                        {copiedIndex === idx && (
+                                                                        {copiedText === cell.value && (
                                                                             <Tag type="green" size="sm">{t('app.copied')}</Tag>
                                                                         )}
                                                                     </div>
