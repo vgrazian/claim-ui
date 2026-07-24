@@ -148,6 +148,11 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         [claims]
     );
 
+    const weekL104Total = useMemo(
+        () => claims.filter((c) => c.activityType === 'l104').reduce((sum, c) => sum + c.hours, 0),
+        [claims]
+    );
+
     // Keyboard shortcuts
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -270,9 +275,10 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                                 <Tag type={l104Total > l104Max ? 'red' : 'teal'} size="sm">
                                     L.104
                                 </Tag>
-                                <span className="week-summary__hours">
-                                    {l104Total}/{l104Max}h
-                                </span>
+                                <div className="week-summary__l104-stack">
+                                    <span>week {weekL104Total}h</span>
+                                    <span>month {l104Total}/{l104Max}h</span>
+                                </div>
                             </div>
                         </div>
                     </Tile>
