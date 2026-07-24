@@ -52,6 +52,9 @@ export default function EntryFormModal({
         setField('workItem', entry.workItem);
     };
 
+    const uniqueCustomers = [...new Set(recentEntries.map((e) => e.customer))].filter(Boolean);
+    const uniqueWorkItems = [...new Set(recentEntries.map((e) => e.workItem))].filter(Boolean);
+
     return (
         <Modal
             open
@@ -118,14 +121,26 @@ export default function EntryFormModal({
                     labelText={t('entry.customer')}
                     value={values.customer}
                     onChange={(e) => setField('customer', e.target.value)}
+                    list="recent-customers"
                 />
+                <datalist id="recent-customers">
+                    {uniqueCustomers.map((c) => (
+                        <option key={c} value={c} />
+                    ))}
+                </datalist>
 
                 <TextInput
                     id="entry-workitem"
                     labelText={t('entry.workItem')}
                     value={values.workItem}
                     onChange={(e) => setField('workItem', e.target.value)}
+                    list="recent-workitems"
                 />
+                <datalist id="recent-workitems">
+                    {uniqueWorkItems.map((w) => (
+                        <option key={w} value={w} />
+                    ))}
+                </datalist>
 
                 <NumberInput
                     id="entry-hours"
