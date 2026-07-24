@@ -11,10 +11,7 @@ import { MondayUser, queryItems, ClaimEntry } from '../services/api';
 import {
     itemToClaimEntry,
     formatDate,
-    getWeekStart,
-    getWeekDates,
 } from '../services/claims';
-import { useWeekNavigation } from '../hooks/useData';
 
 const PRESALES_OPPORTUNITY_HOURS_LIMIT = 40;
 
@@ -38,19 +35,16 @@ interface OppRow {
 
 export default function PresalesView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
-    const { weekStart, goToPreviousWeek, goToNextWeek } = useWeekNavigation();
     const [claims, setClaims] = useState<ClaimEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copiedOpp, setCopiedOpp] = useState<string | null>(null);
 
-    const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
-
     const loadClaims = useCallback(async () => {
         setLoading(true);
         try {
-            const dateFilter = weekDates.map((d) => formatDate(d));
-            const data = await queryItems(boardId, groupId, user.id, dateFilter);
+            // Query without date filter — show all presales entries for the year
+            const data = await queryItems(boardId, groupId, user.id);
 
             const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
             const entries = items
@@ -73,13 +67,13 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
     // Pivot: rows by opportunity (comment), columns by day
     const { oppRows, grandTotal } = useMemo(() => {
         const presales = claims.filter(
-            (c) => c.activityType === 'presales' && c.workItem && c.workItem.trim()
+            (c) => c.activityType === 'presales' && c.comment && c.comment.trim()
         );
 
         // Group by comment (opportunity number)
         const map = new Map<string, OppRow>();
         presales.forEach((c) => {
-            const opp = c.workItem.trim();
+            const opp = c.comment!.trim();
             if (!map.has(opp)) {
                 map.set(opp, {
                     opportunity: opp,
@@ -112,10 +106,6 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         <div className="page-container">
             <div className="page-header">
                 <h2>{t('presales.title')}</h2>
-                <div className="page-header__actions">
-                    <Button kind="ghost" onClick={goToPreviousWeek}>{t('week.previousWeek')}</Button>
-                    <Button kind="ghost" onClick={goToNextWeek}>{t('week.nextWeek')}</Button>
-                </div>
             </div>
 
             {loading && <InlineLoading description={t('app.loading')} />}
