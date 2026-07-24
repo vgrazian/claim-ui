@@ -66,7 +66,7 @@ export function extractHoursFromItem(item: { column_values?: Array<{ id?: string
 
 export function extractCommentFromItem(item: { column_values?: Array<{ id?: string; value?: string; text?: string }> }): string | null {
     if (!item.column_values) return null;
-    const col = item.column_values.find((c) => c.id === 'text');
+    const col = item.column_values.find((c) => c.id === 'text2__1' || c.id === 'long_text');
     return col?.text || null;
 }
 

@@ -70,10 +70,10 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             (c) => c.activityType === 'presales'
         );
 
-        // Group by workItem (opportunity number)
+        // Group by comment (opportunity number)
         const map = new Map<string, OppRow>();
         presales.forEach((c) => {
-            const opp = (c.workItem || c.comment || 'Unknown').trim();
+            const opp = (c.comment && c.comment.trim()) || '(no opp #)';
             if (!map.has(opp)) {
                 map.set(opp, {
                     opportunity: opp,
