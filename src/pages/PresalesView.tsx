@@ -88,7 +88,12 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             row.entries.push({ date: c.date, hours: c.hours });
         });
 
-        const rows = Array.from(map.values()).sort((a, b) => b.totalHours - a.totalHours);
+        const rows = Array.from(map.values()).sort((a, b) => {
+            // Sort by most recent date used (descending)
+            const aMax = a.entries.reduce((max, e) => e.date > max ? e.date : max, '');
+            const bMax = b.entries.reduce((max, e) => e.date > max ? e.date : max, '');
+            return bMax.localeCompare(aMax);
+        });
         const total = rows.reduce((s, r) => s + r.totalHours, 0);
 
         return { oppRows: rows, grandTotal: total };
