@@ -38,7 +38,6 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const [claims, setClaims] = useState<ClaimEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
     const [copiedText, setCopiedText] = useState<string | null>(null);
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
@@ -121,13 +120,6 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         { key: 'totalHours', header: t('report.totalHours') },
     ];
 
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopiedIndex(Date.now()); // use as signal
-            setTimeout(() => setCopiedIndex(null), 2000);
-        } catch { }
-    };
 
     const [copiedText, setCopiedText] = useState<string | null>(null);
 
