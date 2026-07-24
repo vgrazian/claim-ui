@@ -153,19 +153,19 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         <div className="page-container">
             <div className="page-header">
                 <h2>{t('report.title')}</h2>
+                <input
+                    type="date"
+                    className="quick-date-picker"
+                    value={formatDate(weekStart)}
+                    onChange={(e) => {
+                        const d = new Date(e.target.value + 'T00:00:00');
+                        setWeekStart(getWeekStart(d));
+                    }}
+                    title="Jump to date"
+                />
                 <div className="page-header__actions">
                     <Button kind="ghost" onClick={goToPreviousWeek}>{t('week.previousWeek')}</Button>
                     <Button kind="ghost" onClick={goToNextWeek}>{t('week.nextWeek')}</Button>
-                    <input
-                        type="date"
-                        className="quick-date-picker"
-                        value={formatDate(weekStart)}
-                        onChange={(e) => {
-                            const d = new Date(e.target.value + 'T00:00:00');
-                            setWeekStart(getWeekStart(d));
-                        }}
-                        title="Jump to date"
-                    />
                     <Button
                         kind="ghost"
                         onClick={() => {
