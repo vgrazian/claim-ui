@@ -132,7 +132,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         { key: 'workItem', header: t('report.workItem') },
         { key: 'comment', header: 'Opp #' },
         ...dayColumns.map((d, i) => {
-            const date = weekDates[i];
+            const date = queryDates[i];
             const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
             const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             return {
