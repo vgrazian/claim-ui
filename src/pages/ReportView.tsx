@@ -65,8 +65,9 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         loadClaims();
     }, [loadClaims]);
 
-    const { reportRows, grandTotal } = useMemo(() => {
+    const { reportRows, grandTotal, dailyTotals } = useMemo(() => {
         const map = new Map<string, ReportRow>();
+        const dayTotals: Record<string, number> = {};
         claims.forEach((c) => {
             const key = `${c.customer}::${c.workItem}`;
             if (!map.has(key)) {
@@ -75,10 +76,11 @@ export default function ReportView({ user, boardId, groupId }: Props) {
             const row = map.get(key)!;
             row.totalHours += c.hours;
             row.days.set(c.date, (row.days.get(c.date) || 0) + c.hours);
+            dayTotals[c.date] = (dayTotals[c.date] || 0) + c.hours;
         });
         const rows = Array.from(map.values()).sort((a, b) => b.totalHours - a.totalHours);
         const total = rows.reduce((s, r) => s + r.totalHours, 0);
-        return { reportRows: rows, grandTotal: total };
+        return { reportRows: rows, grandTotal: total, dailyTotals: dayTotals };
     }, [claims]);
 
     const dayColumns = weekDates.map((d) => formatDate(d));
@@ -191,6 +193,21 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                             );
                                         })}
                                     </TableBody>
+                                    <tfoot>
+                                        <TableRow className="report-totals-row">
+                                            <TableCell colSpan={2}>
+                                                <strong>{t('report.totalHours')}</strong>
+                                            </TableCell>
+                                            {dayColumns.map((d) => (
+                                                <TableCell key={d}>
+                                                    <strong>{dailyTotals[d] || 0}h</strong>
+                                                </TableCell>
+                                            ))}
+                                            <TableCell>
+                                                <Tag type="blue">{grandTotal}h</Tag>
+                                            </TableCell>
+                                        </TableRow>
+                                    </tfoot>
                                 </Table>
                             )}
                         </DataTable>
