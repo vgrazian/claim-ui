@@ -302,6 +302,20 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+
+    &__recent {
+        &-label {
+            font-size: 0.75rem;
+            color: #525252;
+            margin-bottom: 0.375rem;
+            display: block;
+        }
+        &-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+    }
 }
 
 // Report

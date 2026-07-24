@@ -8,6 +8,7 @@ import {
     Button,
     Modal,
     InlineNotification,
+    Tag,
 } from '@carbon/react';
 import { ACTIVITY_TYPE_KEYS } from '../services/claims';
 
@@ -26,6 +27,7 @@ interface Props {
     error: string | null;
     onSubmit: () => void;
     onClose: () => void;
+    recentEntries?: Array<{ customer: string; workItem: string }>;
 }
 
 export default function EntryFormModal({
@@ -36,6 +38,7 @@ export default function EntryFormModal({
     error,
     onSubmit,
     onClose,
+    recentEntries = [],
 }: Props) {
     const { t } = useTranslation();
 
@@ -43,6 +46,11 @@ export default function EntryFormModal({
         id: key,
         text: t(`entry.activityTypes.${key}`, key),
     }));
+
+    const selectRecent = (entry: { customer: string; workItem: string }) => {
+        setField('customer', entry.customer);
+        setField('workItem', entry.workItem);
+    };
 
     return (
         <Modal
@@ -64,6 +72,25 @@ export default function EntryFormModal({
                         lowContrast
                         onClose={() => { }}
                     />
+                )}
+
+                {recentEntries.length > 0 && (
+                    <div className="entry-form__recent">
+                        <span className="entry-form__recent-label">{t('entry.quickSelect')}:</span>
+                        <div className="entry-form__recent-pills">
+                            {recentEntries.slice(0, 8).map((e, i) => (
+                                <Tag
+                                    key={i}
+                                    type="cool-gray"
+                                    size="sm"
+                                    filter
+                                    onClick={() => selectRecent(e)}
+                                >
+                                    {e.customer} / {e.workItem}
+                                </Tag>
+                            ))}
+                        </div>
+                    </div>
                 )}
 
                 <TextInput

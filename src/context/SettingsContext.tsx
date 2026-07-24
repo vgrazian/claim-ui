@@ -35,9 +35,10 @@ const SettingsContext = createContext<SettingsContextType>({
     apiKeyStatus: 'loading',
     setApiKey: async () => ({ success: false }),
     refreshApiKeyStatus: () => { },
-    apiKeyMasked: null,    apiUserName: null,
+    apiKeyMasked: null, apiUserName: null,
     apiUserEmail: null,
-    setApiUser: () => {},});
+    setApiUser: () => { },
+});
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const { i18n } = useTranslation();

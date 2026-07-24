@@ -143,7 +143,7 @@ export default function SettingsView() {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ userNameOverride: val }),
-                            }).catch(() => {});
+                            }).catch(() => { });
                         }}
                     />
                     <TextInput

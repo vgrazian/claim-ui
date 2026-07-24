@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Button,
@@ -44,7 +44,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const { settings } = useSettings();
     const { weekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
     const { claims, loading, error, refresh } = useClaims(weekStart, boardId, groupId, user.id);
-    const { l104Total, l104Max } = useMonthlyL104(boardId, groupId, user.id);
+    const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
     const [editEntry, setEditEntry] = useState<any>(null);
@@ -72,6 +72,21 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         setEditEntry(null);
         refresh();
     }, [refresh]);
+
+    // Recent entries for quick-select
+    const recentEntries = useMemo(() => {
+        const seen = new Set<string>();
+        const result: Array<{ customer: string; workItem: string }> = [];
+        for (const c of [...claims].reverse()) {
+            if (!c.customer || !c.workItem) continue;
+            const key = `${c.customer}::${c.workItem}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push({ customer: c.customer, workItem: c.workItem });
+            }
+        }
+        return result.slice(0, 10);
+    }, [claims]);
 
     const { values, setField, saving, error: formError, submit, handleDelete } = useEntryForm(
         boardId,
@@ -102,6 +117,31 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         () => claims.reduce((sum, c) => sum + c.hours, 0),
         [claims]
     );
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            if (formMode) return;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    goToPreviousWeek();
+                    break;
+                case 'ArrowRight':
+                    goToNextWeek();
+                    break;
+                case 'a':
+                    setFormMode('add');
+                    setEditEntry(null);
+                    break;
+                case 't':
+                    goToToday();
+                    break;
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [goToPreviousWeek, goToNextWeek, goToToday, formMode]);
 
     if (error) {
         return (
@@ -172,8 +212,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                             <span className="week-summary__hours">{weekTotalHours}h</span>
                         </div>
                         <div className="week-summary__item week-summary__l104">
+                            <Tag type="teal" size="sm">Vacation</Tag>
+                            <span className="week-summary__hours">{vacationTotal}h</span>
+                        </div>
+                        <div className="week-summary__item week-summary__l104">
                             <Tag type={l104Total > l104Max ? 'red' : 'teal'} size="sm">
-                                L.104 this month
+                                L.104
                             </Tag>
                             <span className="week-summary__hours">
                                 {l104Total}/{l104Max}h
@@ -279,6 +323,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     mode={formMode}
                     values={values}
                     setField={setField}
+                    recentEntries={recentEntries}
                     saving={saving}
                     error={formError}
                     onSubmit={submit}

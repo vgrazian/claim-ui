@@ -39,6 +39,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copiedText, setCopiedText] = useState<string | null>(null);
+    const [markedRows, setMarkedRows] = useState<Set<string>>(new Set());
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
 
@@ -88,9 +89,19 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const weekendDates = new Set(
         weekDates.filter((d) => d.getDay() === 0 || d.getDay() === 6).map((d) => formatDate(d))
     );
+    const toggleMark = (key: string) => {
+        setMarkedRows((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
     const tableRows = reportRows.map((r, i) => ({
         id: `${r.customer}::${r.workItem}::${r.comment}`,
         index: i,
+        mark: false,
         customer: r.customer,
         workItem: r.workItem,
         comment: r.comment,
@@ -99,6 +110,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     }));
 
     const headers = [
+        { key: 'mark', header: '' },
         { key: 'customer', header: t('report.customer') },
         { key: 'workItem', header: t('report.workItem') },
         { key: 'comment', header: 'Opp #' },
@@ -127,6 +139,11 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                 <div className="page-header__actions">
                     <Button kind="ghost" onClick={goToPreviousWeek}>{t('week.previousWeek')}</Button>
                     <Button kind="ghost" onClick={goToNextWeek}>{t('week.nextWeek')}</Button>
+                    {markedRows.size > 0 && (
+                        <Button kind="danger--ghost" onClick={() => setMarkedRows(new Set())}>
+                            Clear {markedRows.size}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -172,6 +189,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                             return (
                                                 <TableRow {...getRowProps({ row })} key={row.id}>
                                                     {row.cells.map((cell: any) => {
+                                                        const isMark = cell.info?.header === 'mark';
                                                         const isTotal = cell.info?.header === 'totalHours';
                                                         const isWorkItem = cell.info?.header === 'workItem';
                                                         const isComment = cell.info?.header === 'comment';
@@ -179,7 +197,13 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                                         const isWeekend = isDay && weekendDates.has(cell.info?.header);
                                                         return (
                                                             <TableCell key={cell.id} className={isWeekend ? 'report-weekend-col' : ''}>
-                                                                {isTotal ? (
+                                                                {isMark ? (
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={markedRows.has((row as any).id)}
+                                                                        onChange={() => toggleMark((row as any).id)}
+                                                                    />
+                                                                ) : isTotal ? (
                                                                     <Tag type="blue" size="sm">{cell.value}h</Tag>
                                                                 ) : (isWorkItem || isComment) && cell.value ? (
                                                                     <div className="report-cell-actions">
@@ -215,7 +239,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                     </TableBody>
                                     <tfoot>
                                         <TableRow className="report-totals-row">
-                                            <TableCell colSpan={3}>
+                                            <TableCell colSpan={4}>
                                                 <strong>{t('report.totalHours')}</strong>
                                             </TableCell>
                                             {dayColumns.map((d) => (

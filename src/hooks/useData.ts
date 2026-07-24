@@ -97,6 +97,7 @@ export function useWeekNavigation(initialDate?: Date) {
 
 export function useMonthlyL104(boardId: string, groupId: string, userId: number | null) {
     const [l104Total, setL104Total] = useState<number>(0);
+    const [vacationTotal, setVacationTotal] = useState<number>(0);
     const L104_MAX = 24;
 
     useEffect(() => {
@@ -119,13 +120,17 @@ export function useMonthlyL104(boardId: string, groupId: string, userId: number 
                 const entries = items
                     .map(itemToClaimEntry)
                     .filter((e: ClaimEntry | null): e is ClaimEntry => e !== null);
-                const total = entries
+                const l104 = entries
                     .filter((e) => e.activityType === 'l104')
                     .reduce((sum, e) => sum + e.hours, 0);
-                setL104Total(total);
+                const vacation = entries
+                    .filter((e) => e.activityType === 'vacation')
+                    .reduce((sum, e) => sum + e.hours, 0);
+                setL104Total(l104);
+                setVacationTotal(vacation);
             })
             .catch(() => { });
     }, [boardId, groupId, userId]);
 
-    return { l104Total, l104Max: L104_MAX };
+    return { l104Total, vacationTotal, l104Max: L104_MAX };
 }

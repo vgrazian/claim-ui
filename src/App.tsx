@@ -20,6 +20,7 @@ import ReportView from './pages/ReportView';
 import PresalesView from './pages/PresalesView';
 import SettingsView from './pages/SettingsView';
 import ApiKeySetup from './components/ApiKeySetup';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function ErrorBanner({ message }: { message: string }) {
     return (
@@ -52,84 +53,88 @@ export default function App() {
     const currentYear = new Date().getFullYear().toString();
     const groupId = board?.groups?.find((g) => g.title === currentYear)?.id || '';
 
+    const theme = settings.theme === 'dark' ? 'g100' : 'g10';
+
     // Show API key setup panel when key is missing
     if (apiKeyStatus === 'not_found') {
         return (
-            <Theme theme="g10">
+            <Theme theme={theme}>
                 <ApiKeySetup />
             </Theme>
         );
     }
 
     return (
-        <Theme theme="g10">
-            <HeaderContainer
-                render={() => (
-                    <>
-                        <Header aria-label={t('app.title')}>
-                            <HeaderName prefix="">{t('app.title')}</HeaderName>
-                            <HeaderNavigation aria-label={t('app.title')}>
-                                <HeaderMenuItem as={NavLink} to="/week">
-                                    <Calendar size={16} /> {t('nav.week')}
-                                </HeaderMenuItem>
-                                <HeaderMenuItem as={NavLink} to="/report">
-                                    <Report size={16} /> {t('nav.report')}
-                                </HeaderMenuItem>
-                                <HeaderMenuItem as={NavLink} to="/presales">
-                                    <ChartLine size={16} /> {t('nav.presales')}
-                                </HeaderMenuItem>
-                                <HeaderMenuItem as={NavLink} to="/settings">
-                                    <Settings size={16} /> {t('nav.settings')}
-                                </HeaderMenuItem>
-                            </HeaderNavigation>
-                        </Header>
-                        <Content>
-                            {loading ? (
-                                <div className="app-loading">
-                                    <Loading withOverlay={false} description={t('app.loading')} />
-                                </div>
-                            ) : error ? (
-                                <ErrorBanner message={error} />
-                            ) : (
-                                <Routes>
-                                    <Route path="/" element={<Navigate to="/week" replace />} />
-                                    <Route
-                                        path="/week"
-                                        element={
-                                            <WeekView
-                                                user={user!}
-                                                boardId={settings.boardId}
-                                                groupId={groupId}
-                                            />
-                                        }
-                                    />
-                                    <Route
-                                        path="/report"
-                                        element={
-                                            <ReportView
-                                                user={user!}
-                                                boardId={settings.boardId}
-                                                groupId={groupId}
-                                            />
-                                        }
-                                    />
-                                    <Route
-                                        path="/presales"
-                                        element={
-                                            <PresalesView
-                                                user={user!}
-                                                boardId={settings.boardId}
-                                                groupId={groupId}
-                                            />
-                                        }
-                                    />
-                                    <Route path="/settings" element={<SettingsView />} />
-                                </Routes>
-                            )}
-                        </Content>
-                    </>
-                )}
-            />
-        </Theme>
+        <ErrorBoundary>
+            <Theme theme={theme}>
+                <HeaderContainer
+                    render={() => (
+                        <>
+                            <Header aria-label={t('app.title')}>
+                                <HeaderName prefix="">{t('app.title')}</HeaderName>
+                                <HeaderNavigation aria-label={t('app.title')}>
+                                    <HeaderMenuItem as={NavLink} to="/week">
+                                        <Calendar size={16} /> {t('nav.week')}
+                                    </HeaderMenuItem>
+                                    <HeaderMenuItem as={NavLink} to="/report">
+                                        <Report size={16} /> {t('nav.report')}
+                                    </HeaderMenuItem>
+                                    <HeaderMenuItem as={NavLink} to="/presales">
+                                        <ChartLine size={16} /> {t('nav.presales')}
+                                    </HeaderMenuItem>
+                                    <HeaderMenuItem as={NavLink} to="/settings">
+                                        <Settings size={16} /> {t('nav.settings')}
+                                    </HeaderMenuItem>
+                                </HeaderNavigation>
+                            </Header>
+                            <Content>
+                                {loading ? (
+                                    <div className="app-loading">
+                                        <Loading withOverlay={false} description={t('app.loading')} />
+                                    </div>
+                                ) : error ? (
+                                    <ErrorBanner message={error} />
+                                ) : (
+                                    <Routes>
+                                        <Route path="/" element={<Navigate to="/week" replace />} />
+                                        <Route
+                                            path="/week"
+                                            element={
+                                                <WeekView
+                                                    user={user!}
+                                                    boardId={settings.boardId}
+                                                    groupId={groupId}
+                                                />
+                                            }
+                                        />
+                                        <Route
+                                            path="/report"
+                                            element={
+                                                <ReportView
+                                                    user={user!}
+                                                    boardId={settings.boardId}
+                                                    groupId={groupId}
+                                                />
+                                            }
+                                        />
+                                        <Route
+                                            path="/presales"
+                                            element={
+                                                <PresalesView
+                                                    user={user!}
+                                                    boardId={settings.boardId}
+                                                    groupId={groupId}
+                                                />
+                                            }
+                                        />
+                                        <Route path="/settings" element={<SettingsView />} />
+                                    </Routes>
+                                )}
+                            </Content>
+                        </>
+                    )}
+                />
+            </Theme>
+        </ErrorBoundary>
     );
 }

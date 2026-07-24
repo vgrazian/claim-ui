@@ -56,6 +56,7 @@ vi.mock('../hooks/useData', () => ({
     }),
     useUser: () => ({ user: { id: 1, name: 'Test', email: 't@t.com' }, loading: false, error: null }),
     useBoard: () => ({ board: { groups: [{ id: 'g1', title: '2025' }] }, loading: false, error: null }),
+    useMonthlyL104: () => ({ l104Total: 0, vacationTotal: 0, l104Max: 24 }),
 }));
 
 import WeekView from '../pages/WeekView';
