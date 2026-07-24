@@ -1,28 +1,45 @@
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { homedir } from 'os';
+import { homedir, platform } from 'os';
 import express from 'express';
 import cors from 'cors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const home = homedir();
+const os = platform();
 
-const CONFIG_PATH = join(
-    homedir(),
-    'Library',
-    'Application Support',
-    'com.vgrazian.claim',
-    'config.json'
-);
+// Cross-platform config path — matches TUI app locations
+function getConfigPaths() {
+    if (os === 'darwin') {
+        return [join(home, 'Library', 'Application Support', 'com.vgrazian.claim', 'config.json')];
+    }
+    if (os === 'linux') {
+        return [join(home, '.config', 'com.vgrazian.claim', 'config.json')];
+    }
+    if (os === 'win32') {
+        return [join(process.env.APPDATA || join(home, 'AppData', 'Roaming'), 'com.vgrazian.claim', 'config.json')];
+    }
+    return [join(home, '.config', 'com.vgrazian.claim', 'config.json')];
+}
 
+const CONFIG_PATHS = getConfigPaths();
 const MONDAY_API = 'https://api.monday.com/v2';
 const BOARD_ID = '6500270039';
 
+function findConfigPath() {
+    for (const p of CONFIG_PATHS) {
+        if (existsSync(p)) return p;
+    }
+    return CONFIG_PATHS[0]; // default to first path for saving
+}
+
 function loadConfig() {
+    const configPath = findConfigPath();
     try {
-        if (existsSync(CONFIG_PATH)) {
-            const raw = readFileSync(CONFIG_PATH, 'utf-8');
+        if (existsSync(configPath)) {
+            const raw = readFileSync(configPath, 'utf-8');
             return JSON.parse(raw);
         }
     } catch (e) {
@@ -36,11 +53,12 @@ function loadApiKey() {
 }
 
 function saveConfig(config) {
-    const dir = dirname(CONFIG_PATH);
+    const configPath = findConfigPath();
+    const dir = dirname(configPath);
     if (!existsSync(dir)) {
         mkdirSync(dir, { recursive: true });
     }
-    writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+    writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
 }
 
 async function proxyMonday(query, variables = {}) {

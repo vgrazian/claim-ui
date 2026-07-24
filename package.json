@@ -3,15 +3,18 @@
     "version": "0.1.0",
     "private": true,
     "description": "Web-based Monday.com claim management tool with IBM Carbon UI",
+    "bin": {
+        "claim-ui": "./launcher.js"
+    },
     "scripts": {
         "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
         "dev:client": "vite",
         "dev:server": "node server/index.mjs",
         "build": "vite build",
         "start": "node server/index.mjs",
+        "launch": "node launcher.js",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:e2e": "playwright test",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
     },
     "dependencies": {
