@@ -575,6 +575,14 @@
     gap: 1rem;
 }
 
+// Last updated indicator
+.last-updated {
+    font-size: 0.625rem;
+    color: #8d8d8d;
+    align-self: center;
+    margin-left: -0.25rem;
+}
+
 // Quick date picker
 .quick-date-picker {
     border: 1px solid #c6c6c6;

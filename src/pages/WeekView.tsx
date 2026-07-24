@@ -49,6 +49,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         return localStorage.getItem('claim-ui-month-view') === 'true';
     });
     const [selectedDayDetail, setSelectedDayDetail] = useState<string | null>(null);
+    const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
     // Persist month view setting
     useEffect(() => {
@@ -209,9 +210,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         <Button kind="ghost" renderIcon={ArrowRight} onClick={goToNextWeek}>
                             {t('week.nextWeek')}
                         </Button>
-                        <Button kind="tertiary" renderIcon={Renew} onClick={refresh}>
+                        <Button kind="tertiary" renderIcon={Renew} onClick={() => { refresh(); setLastRefresh(new Date()); }}>
                             {t('app.refresh')}
                         </Button>
+                        <span className="last-updated" title={`Last updated: ${lastRefresh.toLocaleTimeString()}`}>
+                            {lastRefresh.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                         <Button
                             renderIcon={Add}
                             onClick={() => {
@@ -255,7 +259,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                 activitySummary.length > 0 && (
                     <Tile className="week-summary">
                         <div className="week-summary__items">
-                            {activitySummary.map(([type, hours]) => (
+                            {activitySummary.filter(([type]) => type !== 'l104').map(([type, hours]) => (
                                 <div key={type} className="week-summary__item">
                                     <Tag type="green" size="sm">
                                         {t(`entry.activityTypes.${type}`, type)}
