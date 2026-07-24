@@ -50,7 +50,7 @@ describe('Data Extraction', () => {
             { id: 'text__1', value: null, text: 'Test Customer' },
             { id: 'text8__1', value: null, text: 'WI-001' },
             { id: 'numbers__1', value: '8', text: '8' },
-            { id: 'text', value: null, text: 'Test comment' },
+            { id: 'text2__1', value: null, text: 'Test comment' },
             { id: 'status', value: '{"index":0}', text: 'Billable' },
         ],
     };
