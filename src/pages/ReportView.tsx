@@ -34,7 +34,10 @@ interface ReportRow {
 
 export default function ReportView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
-    const { weekStart, goToPreviousWeek, goToNextWeek } = useWeekNavigation();
+    const { weekStart, setWeekStart, goToPreviousWeek, goToNextWeek } = useWeekNavigation();
+    const [monthView, setMonthView] = useState(() => {
+        return localStorage.getItem('claim-ui-report-month') === 'true';
+    });
     const [claims, setClaims] = useState<ClaimEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -42,11 +45,25 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const [markedRows, setMarkedRows] = useState<Set<string>>(new Set());
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
+    const monthDates = useMemo(() => {
+        const now = new Date(weekStart);
+        const first = new Date(now.getFullYear(), now.getMonth(), 1);
+        const day = first.getDay();
+        const start = new Date(first);
+        start.setDate(first.getDate() - (day === 0 ? 6 : day - 1));
+        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const dates: Date[] = [];
+        for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 1)) {
+            dates.push(new Date(d));
+        }
+        return dates;
+    }, [weekStart]);
+    const queryDates = monthView ? monthDates : weekDates;
 
     const loadClaims = useCallback(async () => {
         setLoading(true);
         try {
-            const dateFilter = weekDates.map((d) => formatDate(d));
+            const dateFilter = queryDates.map((d) => formatDate(d));
             const data = await queryItems(boardId, groupId, user.id, dateFilter);
 
             const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
@@ -61,7 +78,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [weekStart, boardId, groupId, user.id, weekDates]);
+    }, [weekStart, boardId, groupId, user.id, queryDates]);
 
     useEffect(() => {
         loadClaims();
@@ -85,9 +102,9 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         return { reportRows: rows, grandTotal: total, dailyTotals: dayTotals };
     }, [claims]);
 
-    const dayColumns = weekDates.map((d) => formatDate(d));
+    const dayColumns = queryDates.map((d) => formatDate(d));
     const weekendDates = new Set(
-        weekDates.filter((d) => d.getDay() === 0 || d.getDay() === 6).map((d) => formatDate(d))
+        queryDates.filter((d) => d.getDay() === 0 || d.getDay() === 6).map((d) => formatDate(d))
     );
     const toggleMark = (key: string) => {
         setMarkedRows((prev) => {
@@ -139,6 +156,28 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                 <div className="page-header__actions">
                     <Button kind="ghost" onClick={goToPreviousWeek}>{t('week.previousWeek')}</Button>
                     <Button kind="ghost" onClick={goToNextWeek}>{t('week.nextWeek')}</Button>
+                    <input
+                        type="date"
+                        className="quick-date-picker"
+                        value={formatDate(weekStart)}
+                        onChange={(e) => {
+                            const d = new Date(e.target.value + 'T00:00:00');
+                            setWeekStart(getWeekStart(d));
+                        }}
+                        title="Jump to date"
+                    />
+                    <Button
+                        kind="ghost"
+                        onClick={() => {
+                            setMonthView((v) => {
+                                const next = !v;
+                                localStorage.setItem('claim-ui-report-month', String(next));
+                                return next;
+                            });
+                        }}
+                    >
+                        {monthView ? 'Week view' : 'Month view'}
+                    </Button>
                     {markedRows.size > 0 && (
                         <Button kind="danger--ghost" onClick={() => setMarkedRows(new Set())}>
                             Clear {markedRows.size}

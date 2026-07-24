@@ -5,6 +5,8 @@ import {
     Tag,
     Button,
     InlineLoading,
+    TextInput,
+    Toggle,
 } from '@carbon/react';
 import { Copy } from '@carbon/icons-react';
 import { MondayUser, queryItems, ClaimEntry } from '../services/api';
@@ -39,6 +41,8 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copiedOpp, setCopiedOpp] = useState<string | null>(null);
+    const [searchText, setSearchText] = useState('');
+    const [under24Only, setUnder24Only] = useState(false);
 
     const loadClaims = useCallback(async () => {
         setLoading(true);
@@ -99,6 +103,14 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         return { oppRows: rows, grandTotal: total };
     }, [claims]);
 
+    const filteredRows = useMemo(() => {
+        return oppRows.filter((r) => {
+            if (under24Only && r.totalHours >= 24) return false;
+            if (searchText && !r.opportunity.toLowerCase().includes(searchText.toLowerCase())) return false;
+            return true;
+        });
+    }, [oppRows, searchText, under24Only]);
+
     const copyOpp = async (opp: string) => {
         try {
             await navigator.clipboard.writeText(opp);
@@ -111,6 +123,24 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         <div className="page-container">
             <div className="page-header">
                 <h2>{t('presales.title')}</h2>
+                <div className="presales-search">
+                    <TextInput
+                        id="presales-search"
+                        labelText=""
+                        placeholder="Search opportunity..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="sm"
+                    />
+                    <Toggle
+                        id="under24-toggle"
+                        labelA="All"
+                        labelB="Under 24h"
+                        toggled={under24Only}
+                        onToggle={(checked) => setUnder24Only(checked)}
+                        size="sm"
+                    />
+                </div>
             </div>
 
             {loading && <InlineLoading description={t('app.loading')} />}
@@ -124,6 +154,8 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
 
                     {oppRows.length === 0 ? (
                         <Tile>{t('presales.noData')}</Tile>
+                    ) : filteredRows.length === 0 ? (
+                        <Tile>No opportunities match the filter.</Tile>
                     ) : (
                         <div className="presales-table-wrap">
                             <table className="presales-custom-table">
@@ -135,7 +167,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {oppRows.map((row) => {
+                                    {filteredRows.map((row) => {
                                         const sortedEntries = [...row.entries].sort(
                                             (a, b) => a.date.localeCompare(b.date)
                                         );

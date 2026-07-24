@@ -499,6 +499,28 @@
     background-color: #f4f7fb;
 }
 
+// Presales search
+.presales-search {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+// Quick date picker
+.quick-date-picker {
+    border: 1px solid #c6c6c6;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    height: 32px;
+    background: transparent;
+    cursor: pointer;
+
+    &:hover {
+        border-color: #0f62fe;
+    }
+}
+
 // Utilities
 .mb-4 {
     margin-bottom: 1rem;

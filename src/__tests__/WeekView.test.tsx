@@ -33,6 +33,7 @@ vi.mock('../context/SettingsContext', () => ({
 vi.mock('../hooks/useData', () => ({
     useWeekNavigation: () => ({
         weekStart: new Date(2025, 6, 21, 12),
+        setWeekStart: vi.fn(),
         goToPreviousWeek: vi.fn(),
         goToNextWeek: vi.fn(),
         goToToday: vi.fn(),

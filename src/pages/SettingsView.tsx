@@ -184,6 +184,24 @@ export default function SettingsView() {
                         }}
                     />
                 </Tile>
+                <Tile className="settings-tile">
+                    <h3>Install as Desktop App</h3>
+                    <p className="settings-hint">
+                        On macOS: in Chrome/Safari, click the address bar → "Install Claim UI".
+                        On Windows/Linux: use Chrome menu → "Install Claim UI".
+                    </p>
+                    <Button
+                        kind="tertiary"
+                        size="sm"
+                        onClick={() => {
+                            // Trigger PWA install prompt
+                            const ev = new Event('beforeinstallprompt');
+                            window.dispatchEvent(ev);
+                        }}
+                    >
+                        Add to Dock / Desktop
+                    </Button>
+                </Tile>
             </div>
         </div>
     );

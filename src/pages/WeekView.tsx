@@ -42,10 +42,17 @@ interface Props {
 export default function WeekView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
     const { settings } = useSettings();
-    const { weekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
+    const { weekStart, setWeekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
     const [showWeekends, setShowWeekends] = useState(settings.showWeekendsDefault);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [monthView, setMonthView] = useState(false);
+    const [monthView, setMonthView] = useState(() => {
+        return localStorage.getItem('claim-ui-month-view') === 'true';
+    });
+
+    // Persist month view setting
+    useEffect(() => {
+        localStorage.setItem('claim-ui-month-view', String(monthView));
+    }, [monthView]);
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
     const monthDates = useMemo(() => {
@@ -186,6 +193,16 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         <Button kind="ghost" renderIcon={ArrowRight} onClick={goToNextWeek}>
                             {t('week.nextWeek')}
                         </Button>
+                        <input
+                            type="date"
+                            className="quick-date-picker"
+                            value={formatDate(weekStart)}
+                            onChange={(e) => {
+                                const d = new Date(e.target.value + 'T00:00:00');
+                                setWeekStart(getWeekStart(d));
+                            }}
+                            title="Jump to date"
+                        />
                         <Button kind="tertiary" renderIcon={Renew} onClick={refresh}>
                             {t('app.refresh')}
                         </Button>
