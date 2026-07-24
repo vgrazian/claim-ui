@@ -109,7 +109,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         return result.slice(0, 10);
     }, [claims]);
 
-    const { values, setField, saving, error: formError, submit, handleDelete } = useEntryForm(
+    const { values, setField, saving, error: formError, submit, handleDelete, reset } = useEntryForm(
         boardId,
         groupId,
         user.id,
@@ -353,6 +353,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     onClose={() => {
                         setFormMode(null);
                         setEditEntry(null);
+                        reset();
                     }}
                 />
             )}
