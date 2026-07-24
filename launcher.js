@@ -20,7 +20,7 @@ function waitForServer(retries = 30) {
             console.log(`\n  Claim UI ready at ${URL}`);
             const platform = process.platform;
             const openCmd = platform === 'darwin' ? 'open' :
-                           platform === 'win32' ? 'start' : 'xdg-open';
+                platform === 'win32' ? 'start' : 'xdg-open';
             exec(`${openCmd} ${URL}`);
         }
     }).on('error', () => {
