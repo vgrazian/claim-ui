@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,9 +37,15 @@ function ErrorBanner({ message }: { message: string }) {
 
 export default function App() {
     const { t } = useTranslation();
-    const { settings, apiKeyStatus } = useSettings();
+    const { settings, apiKeyStatus, setApiUser } = useSettings();
     const { user, loading: userLoading, error: userError } = useUser();
     const { board, loading: boardLoading, error: boardError } = useBoard(settings.boardId);
+
+    useEffect(() => {
+        if (user) {
+            setApiUser(user.name, user.email);
+        }
+    }, [user, setApiUser]);
 
     const loading = userLoading || boardLoading;
     const error = userError || boardError;

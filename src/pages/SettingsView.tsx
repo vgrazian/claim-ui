@@ -18,7 +18,8 @@ export default function SettingsView() {
         updateSettings,
         apiKeyStatus,
         setApiKey,
-        apiKeyMasked,
+        apiUserName,
+        apiUserEmail,
     } = useSettings();
     const [apiKeyInput, setApiKeyInput] = useState('');
     const [savingKey, setSavingKey] = useState(false);
@@ -79,7 +80,7 @@ export default function SettingsView() {
                         <span>{t('settings.apiKeyStatus')}:</span>
                         {apiKeyStatus === 'loading' && <Tag type="gray">...</Tag>}
                         {apiKeyStatus === 'found' && (
-                            <Tag type="green">{apiKeyMasked || t('settings.apiKeyFound')}</Tag>
+                            <Tag type="green">{t('settings.apiKeyFound')}</Tag>
                         )}
                         {apiKeyStatus === 'not_found' && (
                             <Tag type="red">{t('settings.apiKeyNotFound')}</Tag>
@@ -127,15 +128,14 @@ export default function SettingsView() {
                 </Tile>
 
                 <Tile className="settings-tile">
-                    <h3>User Name Override</h3>
+                    <h3>User</h3>
                     <p className="settings-hint">
-                        Override the display name (recovered from Monday.com by default).
+                        User info retrieved from Monday.com API.
                     </p>
                     <TextInput
                         id="settings-username"
-                        labelText="Display Name"
-                        placeholder="Leave empty to use Monday.com name..."
-                        value={settings.userNameOverride || ''}
+                        labelText="Name"
+                        value={settings.userNameOverride || apiUserName || ''}
                         onChange={(e) => {
                             const val = e.target.value || null;
                             updateSettings({ userNameOverride: val });
@@ -143,8 +143,15 @@ export default function SettingsView() {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ userNameOverride: val }),
-                            }).catch(() => { });
+                            }).catch(() => {});
                         }}
+                    />
+                    <TextInput
+                        id="settings-email"
+                        labelText="Email"
+                        value={apiUserEmail || ''}
+                        readOnly
+                        className="mt-2"
                     />
                 </Tile>
 

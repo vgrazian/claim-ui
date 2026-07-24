@@ -16,6 +16,9 @@ interface SettingsContextType {
     setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>;
     refreshApiKeyStatus: () => void;
     apiKeyMasked: string | null;
+    apiUserName: string | null;
+    apiUserEmail: string | null;
+    setApiUser: (name: string, email: string) => void;
 }
 
 const defaultSettings: Settings = {
@@ -32,8 +35,9 @@ const SettingsContext = createContext<SettingsContextType>({
     apiKeyStatus: 'loading',
     setApiKey: async () => ({ success: false }),
     refreshApiKeyStatus: () => { },
-    apiKeyMasked: null,
-});
+    apiKeyMasked: null,    apiUserName: null,
+    apiUserEmail: null,
+    setApiUser: () => {},});
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const { i18n } = useTranslation();
@@ -48,6 +52,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     });
     const [apiKeyStatus, setApiKeyStatus] = useState<'loading' | 'found' | 'not_found'>('loading');
     const [apiKeyMasked, setApiKeyMasked] = useState<string | null>(null);
+    const [apiUserName, setApiUserName] = useState<string | null>(null);
+    const [apiUserEmail, setApiUserEmail] = useState<string | null>(null);
+
+    const setApiUser = useCallback((name: string, email: string) => {
+        setApiUserName(name);
+        setApiUserEmail(email);
+    }, []);
 
     const updateSettings = useCallback(
         (partial: Partial<Settings>) => {
@@ -130,6 +141,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 setApiKey,
                 refreshApiKeyStatus,
                 apiKeyMasked,
+                apiUserName,
+                apiUserEmail,
+                setApiUser,
             }}
         >
             {children}
