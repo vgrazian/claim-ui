@@ -1,0 +1,104 @@
+{
+    "app": {
+        "title": "Claim Manager",
+        "loading": "Caricamento...",
+        "error": "Errore",
+        "save": "Salva",
+        "cancel": "Annulla",
+        "delete": "Elimina",
+        "edit": "Modifica",
+        "add": "Aggiungi",
+        "refresh": "Aggiorna",
+        "close": "Chiudi",
+        "confirm": "Conferma",
+        "yes": "Sì",
+        "no": "No",
+        "copy": "Copia",
+        "copied": "Copiato negli appunti"
+    },
+    "nav": {
+        "week": "Vista Settimanale",
+        "report": "Report",
+        "presales": "Presales",
+        "settings": "Impostazioni"
+    },
+    "week": {
+        "title": "Vista Settimanale",
+        "previousWeek": "Settimana Precedente",
+        "nextWeek": "Settimana Successiva",
+        "today": "Oggi",
+        "monday": "Lun",
+        "tuesday": "Mar",
+        "wednesday": "Mer",
+        "thursday": "Gio",
+        "friday": "Ven",
+        "saturday": "Sab",
+        "sunday": "Dom",
+        "noEntries": "Nessuna voce per questo giorno",
+        "totalHours": "Ore Totali"
+    },
+    "entry": {
+        "addTitle": "Aggiungi Voce",
+        "editTitle": "Modifica Voce",
+        "deleteTitle": "Elimina Voce",
+        "deleteConfirm": "Sei sicuro di voler eliminare questa voce?",
+        "date": "Data",
+        "activityType": "Tipo Attività",
+        "customer": "Cliente",
+        "workItem": "Work Item",
+        "hours": "Ore",
+        "comment": "Commento",
+        "quickSelect": "Selezione Rapida",
+        "activityTypes": {
+            "billable": "Fatturabile",
+            "vacation": "Ferie",
+            "holding": "Attesa",
+            "education": "Formazione",
+            "work_reduction": "Riduzione Lavoro",
+            "tbd": "Da Definire",
+            "holiday": "Festivo",
+            "presales": "Prevendita",
+            "illness": "Malattia",
+            "paid_not_worked": "Permesso Retribuito",
+            "intellectual_capital": "Capitale Intellettuale",
+            "business_development": "Sviluppo Business",
+            "overhead": "Overhead",
+            "l104": "L.104"
+        }
+    },
+    "report": {
+        "title": "Report",
+        "customer": "Cliente",
+        "workItem": "Work Item",
+        "totalHours": "Ore Totali",
+        "dailyBreakdown": "Dettaglio Giornaliero",
+        "noData": "Nessun dato disponibile",
+        "markItem": "Segna elemento",
+        "clearMarks": "Cancella tutti i segni"
+    },
+    "presales": {
+        "title": "Report Annuale Presales",
+        "opportunity": "Opportunità",
+        "totalHours": "Ore Totali",
+        "limit": "Limite: {{limit}}h",
+        "noData": "Nessun dato presales"
+    },
+    "summary": {
+        "title": "Riepilogo",
+        "hoursDistribution": "Distribuzione Ore"
+    },
+    "settings": {
+        "title": "Impostazioni",
+        "language": "Lingua",
+        "apiKey": "Chiave API",
+        "apiKeyHint": "La chiave API viene letta dal file di configurazione di claim TUI. Configurala prima usando la CLI di claim.",
+        "apiKeyStatus": "Stato",
+        "apiKeyFound": "Chiave API caricata",
+        "apiKeyNotFound": "Nessuna chiave API trovata. Esegui prima `claim` CLI.",
+        "boardConfig": "Configurazione Board",
+        "boardId": "ID Board",
+        "theme": "Tema",
+        "light": "Chiaro",
+        "dark": "Scuro"
+    }
+}

@@ -1,0 +1,104 @@
+{
+    "app": {
+        "title": "Claim Manager",
+        "loading": "Loading...",
+        "error": "Error",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "refresh": "Refresh",
+        "close": "Close",
+        "confirm": "Confirm",
+        "yes": "Yes",
+        "no": "No",
+        "copy": "Copy",
+        "copied": "Copied to clipboard"
+    },
+    "nav": {
+        "week": "Week View",
+        "report": "Report",
+        "presales": "Presales",
+        "settings": "Settings"
+    },
+    "week": {
+        "title": "Week View",
+        "previousWeek": "Previous Week",
+        "nextWeek": "Next Week",
+        "today": "Today",
+        "monday": "Mon",
+        "tuesday": "Tue",
+        "wednesday": "Wed",
+        "thursday": "Thu",
+        "friday": "Fri",
+        "saturday": "Sat",
+        "sunday": "Sun",
+        "noEntries": "No entries for this day",
+        "totalHours": "Total Hours"
+    },
+    "entry": {
+        "addTitle": "Add Entry",
+        "editTitle": "Edit Entry",
+        "deleteTitle": "Delete Entry",
+        "deleteConfirm": "Are you sure you want to delete this entry?",
+        "date": "Date",
+        "activityType": "Activity Type",
+        "customer": "Customer",
+        "workItem": "Work Item",
+        "hours": "Hours",
+        "comment": "Comment",
+        "quickSelect": "Quick Select",
+        "activityTypes": {
+            "billable": "Billable",
+            "vacation": "Vacation",
+            "holding": "Holding",
+            "education": "Education",
+            "work_reduction": "Work Reduction",
+            "tbd": "TBD",
+            "holiday": "Holiday",
+            "presales": "Presales",
+            "illness": "Illness",
+            "paid_not_worked": "Paid Not Worked",
+            "intellectual_capital": "Intellectual Capital",
+            "business_development": "Business Development",
+            "overhead": "Overhead",
+            "l104": "L.104"
+        }
+    },
+    "report": {
+        "title": "Report",
+        "customer": "Customer",
+        "workItem": "Work Item",
+        "totalHours": "Total Hours",
+        "dailyBreakdown": "Daily Breakdown",
+        "noData": "No report data available",
+        "markItem": "Mark item",
+        "clearMarks": "Clear all marks"
+    },
+    "presales": {
+        "title": "Presales Yearly Report",
+        "opportunity": "Opportunity",
+        "totalHours": "Total Hours",
+        "limit": "Limit: {{limit}}h",
+        "noData": "No presales data"
+    },
+    "summary": {
+        "title": "Summary",
+        "hoursDistribution": "Hours Distribution"
+    },
+    "settings": {
+        "title": "Settings",
+        "language": "Language",
+        "apiKey": "API Key",
+        "apiKeyHint": "API key is read from the claim TUI configuration file. Set it up using the claim CLI first.",
+        "apiKeyStatus": "Status",
+        "apiKeyFound": "API key loaded",
+        "apiKeyNotFound": "No API key found. Run `claim` CLI first.",
+        "boardConfig": "Board Configuration",
+        "boardId": "Board ID",
+        "theme": "Theme",
+        "light": "Light",
+        "dark": "Dark"
+    }
+}
