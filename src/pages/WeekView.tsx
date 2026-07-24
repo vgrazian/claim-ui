@@ -48,6 +48,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const [monthView, setMonthView] = useState(() => {
         return localStorage.getItem('claim-ui-month-view') === 'true';
     });
+    const [selectedDayDetail, setSelectedDayDetail] = useState<string | null>(null);
 
     // Persist month view setting
     useEffect(() => {
@@ -288,7 +289,8 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     return (
                         <Tile
                             key={dateStr}
-                            className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''}`}
+                            className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''} ${monthView ? 'week-day-tile--compact' : ''}`}
+                            onClick={monthView ? () => setSelectedDayDetail(dateStr) : undefined}
                         >
                             <div className="week-day-header">
                                 <span className="week-day-label">{t(`week.${getDayLabel(date)}`)}</span>
@@ -299,75 +301,111 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                                     <Tag type="blue" size="sm">{totalHours}h</Tag>
                                 )}
                             </div>
-                            <div className="week-day-entries">
-                                {dayClaims.length === 0 ? (
-                                    <p className="week-day-empty">{t('week.noEntries')}</p>
-                                ) : (
-                                    dayClaims.map((claim) => (
-                                        <div key={claim.id} className="week-entry">
-                                            <div className="week-entry__row">
-                                                <div className="week-entry__info">
-                                                    <Tag type="green" size="sm">
-                                                        {t(`entry.activityTypes.${claim.activityType}`, claim.activityType)}
-                                                    </Tag>
-                                                    <span className="week-entry__customer">{claim.customer}</span>
-                                                    <span className="week-entry__hours">{claim.hours}h</span>
+                            {!monthView && (
+                                <>
+                                    <div className="week-day-entries">
+                                        {dayClaims.length === 0 ? (
+                                            <p className="week-day-empty">{t('week.noEntries')}</p>
+                                        ) : (
+                                            dayClaims.map((claim) => (
+                                                <div key={claim.id} className="week-entry">
+                                                    <div className="week-entry__row">
+                                                        <div className="week-entry__info">
+                                                            <Tag type="green" size="sm">
+                                                                {t(`entry.activityTypes.${claim.activityType}`, claim.activityType)}
+                                                            </Tag>
+                                                            <span className="week-entry__customer">{claim.customer}</span>
+                                                            <span className="week-entry__hours">{claim.hours}h</span>
+                                                        </div>
+                                                        <div className="week-entry__actions">
+                                                            <Button
+                                                                kind="ghost"
+                                                                size="sm"
+                                                                hasIconOnly
+                                                                renderIcon={Edit}
+                                                                iconDescription={t('app.edit')}
+                                                                onClick={() => {
+                                                                    setEditEntry({
+                                                                        id: claim.id,
+                                                                        date: claim.date,
+                                                                        activityType: claim.activityType,
+                                                                        customer: claim.customer,
+                                                                        workItem: claim.workItem,
+                                                                        hours: claim.hours,
+                                                                        comment: claim.comment || '',
+                                                                    });
+                                                                    setFormMode('edit');
+                                                                }}
+                                                            />
+                                                            <Button
+                                                                kind="ghost"
+                                                                size="sm"
+                                                                hasIconOnly
+                                                                renderIcon={TrashCan}
+                                                                iconDescription={t('app.delete')}
+                                                                onClick={() => setDeleteConfirmId(claim.id)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    {claim.comment && (
+                                                        <div className="week-entry__comment" title={claim.comment}>
+                                                            {claim.comment}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <div className="week-entry__actions">
-                                                    <Button
-                                                        kind="ghost"
-                                                        size="sm"
-                                                        hasIconOnly
-                                                        renderIcon={Edit}
-                                                        iconDescription={t('app.edit')}
-                                                        onClick={() => {
-                                                            setEditEntry({
-                                                                id: claim.id,
-                                                                date: claim.date,
-                                                                activityType: claim.activityType,
-                                                                customer: claim.customer,
-                                                                workItem: claim.workItem,
-                                                                hours: claim.hours,
-                                                                comment: claim.comment || '',
-                                                            });
-                                                            setFormMode('edit');
-                                                        }}
-                                                    />
-                                                    <Button
-                                                        kind="ghost"
-                                                        size="sm"
-                                                        hasIconOnly
-                                                        renderIcon={TrashCan}
-                                                        iconDescription={t('app.delete')}
-                                                        onClick={() => setDeleteConfirmId(claim.id)}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {claim.comment && (
-                                                <div className="week-entry__comment" title={claim.comment}>
-                                                    {claim.comment}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            <Button
-                                kind="ghost"
-                                size="sm"
-                                className="week-day-add"
-                                onClick={() => {
-                                    setFormMode('add');
-                                    setEditEntry(null);
-                                    setSelectedDate(dateStr);
-                                }}
-                            >
-                                + {t('app.add')}
-                            </Button>
+                                            ))
+                                        )}
+                                    </div>
+                                    <Button
+                                        kind="ghost"
+                                        size="sm"
+                                        className="week-day-add"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setFormMode('add');
+                                            setEditEntry(null);
+                                            setSelectedDate(dateStr);
+                                        }}
+                                    >
+                                        + {t('app.add')}
+                                    </Button>
+                                </>
+                            )}
                         </Tile>
                     );
                 })}
             </div>
+
+
+            {/* Month view: detail panel for clicked day */}
+            {monthView && selectedDayDetail && claimsByDate[selectedDayDetail] && (
+                <Tile className="month-detail-panel">
+                    <div className="month-detail-header">
+                        <h4>{new Date(selectedDayDetail + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h4>
+                        <Button kind="ghost" size="sm" onClick={() => setSelectedDayDetail(null)}>Close</Button>
+                    </div>
+                    {(claimsByDate[selectedDayDetail] || []).map((claim) => (
+                        <div key={claim.id} className="week-entry month-detail-entry">
+                            <div className="week-entry__row">
+                                <div className="week-entry__info">
+                                    <Tag type="green" size="sm">
+                                        {t('entry.activityTypes.' + claim.activityType, claim.activityType)}
+                                    </Tag>
+                                    <span>{claim.customer} / {claim.workItem}</span>
+                                    <span className="week-entry__hours">{claim.hours}h</span>
+                                </div>
+                                <div className="week-entry__actions">
+                                    <Button kind="ghost" size="sm" hasIconOnly renderIcon={Edit} iconDescription={t('app.edit')}
+                                        onClick={() => {{ setEditEntry({{ id: claim.id, date: claim.date, activityType: claim.activityType, customer: claim.customer, workItem: claim.workItem, hours: claim.hours, comment: claim.comment || '' }}); setFormMode('edit'); }}} />
+                                    <Button kind="ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription={t('app.delete')}
+                                        onClick={() => setDeleteConfirmId(claim.id)} />
+                                </div>
+                            </div>
+                            {claim.comment && <div className="week-entry__comment">{claim.comment}</div>}
+                        </div>
+                    ))}
+                </Tile>
+            )}
 
             {
                 formMode && (
