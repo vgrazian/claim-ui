@@ -32,7 +32,16 @@ export function useEntryForm(
     const [error, setError] = useState<string | null>(null);
 
     const setField = useCallback((field: keyof FormValues, value: string | number) => {
-        setValues((prev) => ({ ...prev, [field]: value }));
+        setValues((prev) => {
+            const next = { ...prev, [field]: value };
+            // Auto-set workItem for vacation/work_reduction
+            if (field === 'activityType' && (value === 'vacation' || value === 'work_reduction' || value === 'l104')) {
+                if (!prev.workItem || prev.workItem === 'M.00556') {
+                    next.workItem = 'M.00556';
+                }
+            }
+            return next;
+        });
     }, []);
 
     const reset = useCallback(() => {

@@ -94,3 +94,38 @@ export function useWeekNavigation(initialDate?: Date) {
 
     return { weekStart, setWeekStart, goToPreviousWeek, goToNextWeek, goToToday };
 }
+
+export function useMonthlyL104(boardId: string, groupId: string, userId: number | null) {
+    const [l104Total, setL104Total] = useState<number>(0);
+    const L104_MAX = 24;
+
+    useEffect(() => {
+        if (!boardId || !groupId || !userId) return;
+
+        const now = new Date();
+        const monthStart = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+        const today = formatDate(now);
+
+        const dates: string[] = [];
+        const start = new Date(monthStart + 'T00:00:00');
+        const end = new Date(today + 'T00:00:00');
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            dates.push(formatDate(new Date(d)));
+        }
+
+        queryItems(boardId, groupId, userId, dates)
+            .then((data) => {
+                const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+                const entries = items
+                    .map(itemToClaimEntry)
+                    .filter((e: ClaimEntry | null): e is ClaimEntry => e !== null);
+                const total = entries
+                    .filter((e) => e.activityType === 'l104')
+                    .reduce((sum, e) => sum + e.hours, 0);
+                setL104Total(total);
+            })
+            .catch(() => { });
+    }, [boardId, groupId, userId]);
+
+    return { l104Total, l104Max: L104_MAX };
+}

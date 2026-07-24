@@ -27,7 +27,7 @@ import {
     Grid,
 } from '@carbon/icons-react';
 import { MondayUser } from '../services/api';
-import { useWeekNavigation, useClaims, useBoard } from '../hooks/useData';
+import { useWeekNavigation, useClaims, useBoard, useMonthlyL104 } from '../hooks/useData';
 import { useEntryForm } from '../hooks/useEntryForm';
 import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS } from '../services/claims';
 import { useSettings } from '../context/SettingsContext';
@@ -44,6 +44,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const { settings } = useSettings();
     const { weekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
     const { claims, loading, error, refresh } = useClaims(weekStart, boardId, groupId, user.id);
+    const { l104Total, l104Max } = useMonthlyL104(boardId, groupId, user.id);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
     const [editEntry, setEditEntry] = useState<any>(null);
@@ -169,6 +170,14 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         <div className="week-summary__item week-summary__total">
                             <strong>{t('week.totalHours')}</strong>
                             <span className="week-summary__hours">{weekTotalHours}h</span>
+                        </div>
+                        <div className="week-summary__item week-summary__l104">
+                            <Tag type={l104Total > l104Max ? 'red' : 'teal'} size="sm">
+                                L.104 this month
+                            </Tag>
+                            <span className="week-summary__hours">
+                                {l104Total}/{l104Max}h
+                            </span>
                         </div>
                     </div>
                 </Tile>
