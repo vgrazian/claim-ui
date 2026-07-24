@@ -2,13 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Tile,
-    DataTable,
-    Table,
-    TableHead,
-    TableRow,
-    TableHeader,
-    TableBody,
-    TableCell,
     Tag,
     Button,
     InlineLoading,
@@ -78,13 +71,8 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
     }, [loadClaims]);
 
     // Pivot: rows by opportunity (comment), columns by day
-    const { oppRows, allDates, grandTotal } = useMemo(() => {
+    const { oppRows, grandTotal } = useMemo(() => {
         const presales = claims.filter((c) => c.activityType === 'presales');
-
-        // Collect unique dates (sorted)
-        const dateSet = new Set<string>();
-        presales.forEach((c) => dateSet.add(c.date));
-        const sortedDates = Array.from(dateSet).sort();
 
         // Group by comment (opportunity number)
         const map = new Map<string, OppRow>();
@@ -107,7 +95,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         const rows = Array.from(map.values()).sort((a, b) => b.totalHours - a.totalHours);
         const total = rows.reduce((s, r) => s + r.totalHours, 0);
 
-        return { oppRows: rows, allDates: sortedDates, grandTotal: total };
+        return { oppRows: rows, grandTotal: total };
     }, [claims]);
 
     const copyOpp = async (opp: string) => {
@@ -115,24 +103,8 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             await navigator.clipboard.writeText(opp);
             setCopiedOpp(opp);
             setTimeout(() => setCopiedOpp(null), 2000);
-        } catch { }
+        } catch {}
     };
-
-    const tableRows = oppRows.map((r) => ({
-        id: r.opportunity,
-        opportunity: r.opportunity,
-        ...Object.fromEntries(allDates.map((d) => [d, r.days.get(d) || 0])),
-        totalHours: r.totalHours,
-    }));
-
-    const headers = [
-        { key: 'opportunity', header: t('presales.opportunity') },
-        ...allDates.map((d) => ({
-            key: d,
-            header: new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        })),
-        { key: 'totalHours', header: t('presales.totalHours') },
-    ];
 
     return (
         <div className="page-container">
@@ -157,85 +129,69 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
                         <Tile>{t('presales.noData')}</Tile>
                     ) : (
                         <div className="presales-table-wrap">
-                            <DataTable rows={tableRows} headers={headers}>
-                                {({ rows, headers: hdrs, getTableProps, getHeaderProps, getRowProps }) => (
-                                    <Table {...getTableProps()} size="sm">
-                                        <TableHead>
-                                            <TableRow>
-                                                {hdrs.map((header) => (
-                                                    <TableHeader
-                                                        {...getHeaderProps({ header })}
-                                                        key={header.key}
-                                                        className={
-                                                            header.key === 'totalHours'
-                                                                ? 'presales-total-col'
-                                                                : ''
-                                                        }
-                                                    >
-                                                        {header.header}
-                                                    </TableHeader>
-                                                ))}
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {rows.map((row) => {
-                                                const total = (row as any).totalHours;
-                                                const isError = total > 24;
-                                                return (
-                                                    <TableRow
-                                                        {...getRowProps({ row })}
-                                                        key={row.id}
-                                                        className={isError ? 'presales-row--error' : ''}
-                                                    >
-                                                        {row.cells.map((cell: any) => {
-                                                            const val = cell.value;
-                                                            const isTotal = cell.info?.header === 'totalHours';
-                                                            const isDay = allDates.includes(cell.info?.header);
-                                                            return (
-                                                                <TableCell key={cell.id}>
-                                                                    {cell.info?.header === 'opportunity' ? (
-                                                                        <div className="presales-opp-cell">
-                                                                            <span>{val}</span>
-                                                                            <Button
-                                                                                kind="ghost"
-                                                                                size="sm"
-                                                                                hasIconOnly
-                                                                                renderIcon={Copy}
-                                                                                iconDescription="Copy"
-                                                                                onClick={() => copyOpp(val)}
-                                                                            />
-                                                                            {copiedOpp === val && (
-                                                                                <Tag type="green" size="sm">Copied</Tag>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : isTotal ? (
-                                                                        <span className={isError ? 'presales-error-tag' : ''}>
-                                                                            <Tag type={isError ? 'red' : 'blue'} size="sm">
-                                                                                {val}h
-                                                                            </Tag>
-                                                                            {isError && (
-                                                                                <Tag type="red" size="sm" className="presales-error-label">
-                                                                                    &gt;24h
-                                                                                </Tag>
-                                                                            )}
-                                                                        </span>
-                                                                    ) : isDay && val > 0 ? (
-                                                                        <span>{val}h</span>
-                                                                    ) : isDay ? (
-                                                                        <span className="presales-zero">-</span>
-                                                                    ) : (
-                                                                        val
-                                                                    )}
-                                                                </TableCell>
-                                                            );
-                                                        })}
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </DataTable>
+                            <table className="presales-custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>{t('presales.opportunity')}</th>
+                                        <th>Dates & Hours</th>
+                                        <th className="presales-total-col">{t('presales.totalHours')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {oppRows.map((row) => {
+                                        const sortedEntries = [...row.entries].sort(
+                                            (a, b) => a.date.localeCompare(b.date)
+                                        );
+                                        const isError = row.totalHours > 24;
+                                        return (
+                                            <tr
+                                                key={row.opportunity}
+                                                className={isError ? 'presales-row--error' : ''}
+                                            >
+                                                <td>
+                                                    <div className="presales-opp-cell">
+                                                        <span>{row.opportunity}</span>
+                                                        <Button
+                                                            kind="ghost"
+                                                            size="sm"
+                                                            hasIconOnly
+                                                            renderIcon={Copy}
+                                                            iconDescription="Copy"
+                                                            onClick={() => copyOpp(row.opportunity)}
+                                                        />
+                                                        {copiedOpp === row.opportunity && (
+                                                            <Tag type="green" size="sm">Copied</Tag>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="presales-dates-list">
+                                                        {sortedEntries.map((e, i) => (
+                                                            <span key={i} className="presales-date-item">
+                                                                {new Date(e.date + 'T00:00:00').toLocaleDateString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                })}
+                                                                : {e.hours}h
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <Tag type={isError ? 'red' : 'blue'} size="sm">
+                                                        {row.totalHours}h
+                                                    </Tag>
+                                                    {isError && (
+                                                        <Tag type="red" size="sm" className="presales-error-label">
+                                                            &gt;24h
+                                                        </Tag>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </>
