@@ -109,27 +109,27 @@ export function useMonthlyL104(boardId: string, groupId: string, userId: number 
     useEffect(() => {
         if (!boardId || !groupId || !userId) return;
 
-        const now = new Date();
-        const monthStart = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
-        const today = formatDate(now);
-
-        const dates: string[] = [];
-        const start = new Date(monthStart + 'T00:00:00');
-        const end = new Date(today + 'T00:00:00');
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            dates.push(formatDate(new Date(d)));
-        }
-
-        queryItems(boardId, groupId, userId, dates)
+        // Query without date filter — get all items and filter client-side
+        queryItems(boardId, groupId, userId)
             .then((data) => {
                 const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
                 const entries = items
                     .map(itemToClaimEntry)
                     .filter((e: ClaimEntry | null): e is ClaimEntry => e !== null);
-                const l104 = entries
+
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+
+                const thisMonth = entries.filter((e) => {
+                    const d = new Date(e.date + 'T00:00:00');
+                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                });
+
+                const l104 = thisMonth
                     .filter((e) => e.activityType === 'l104')
                     .reduce((sum, e) => sum + e.hours, 0);
-                const vacation = entries
+                const vacation = thisMonth
                     .filter((e) => e.activityType === 'vacation')
                     .reduce((sum, e) => sum + e.hours, 0);
                 setL104Total(l104);
