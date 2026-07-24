@@ -17,13 +17,13 @@
         "copied": "Copied to clipboard"
     },
     "nav": {
-        "week": "Week View",
+        "week": "Calendar",
         "report": "Report",
         "presales": "Presales",
         "settings": "Settings"
     },
     "week": {
-        "title": "Week View",
+        "title": "Calendar",
         "previousWeek": "Previous Week",
         "nextWeek": "Next Week",
         "today": "Today",

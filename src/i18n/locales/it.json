@@ -17,13 +17,13 @@
         "copied": "Copiato negli appunti"
     },
     "nav": {
-        "week": "Vista Settimanale",
+        "week": "Calendario",
         "report": "Report",
         "presales": "Presales",
         "settings": "Impostazioni"
     },
     "week": {
-        "title": "Vista Settimanale",
+        "title": "Calendario",
         "previousWeek": "Settimana Precedente",
         "nextWeek": "Settimana Successiva",
         "today": "Oggi",

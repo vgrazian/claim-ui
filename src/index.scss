@@ -88,6 +88,14 @@
     }
 }
 
+.page-header__actions-secondary {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+    width: 100%;
+}
+
 // Week View Grid
 .week-grid {
     display: grid;
@@ -164,9 +172,10 @@
     &--month {
         grid-template-columns: repeat(7, 1fr) !important;
         max-width: none;
+        display: grid;
 
         .week-day-tile {
-            min-height: 120px;
+            min-height: 100px;
         }
     }
 }

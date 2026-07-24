@@ -50,10 +50,14 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
     const monthDates = useMemo(() => {
         const now = new Date(weekStart);
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const first = new Date(now.getFullYear(), now.getMonth(), 1);
+        // Start from the Monday of the week containing the 1st
+        const day = first.getDay();
+        const start = new Date(first);
+        start.setDate(first.getDate() - (day === 0 ? 6 : day - 1));
+        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         const dates: Date[] = [];
-        for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+        for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 1)) {
             dates.push(new Date(d));
         }
         return dates;
@@ -172,42 +176,53 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         <div className="page-container">
             <div className="page-header">
                 <h2>{t('week.title')}</h2>
-                <div className="page-header__actions">
-                    <Button kind="ghost" renderIcon={ArrowLeft} onClick={goToPreviousWeek}>
-                        {t('week.previousWeek')}
-                    </Button>
-                    <Button kind="ghost" onClick={goToToday}>{t('week.today')}</Button>
-                    <Button kind="ghost" renderIcon={ArrowRight} onClick={goToNextWeek}>
-                        {t('week.nextWeek')}
-                    </Button>
-                    <Button
-                        kind="ghost"
-                        onClick={() => setMonthView((v) => !v)}
-                    >
-                        {monthView ? 'Week view' : 'Month view'}
-                    </Button>
-                    <Button
-                        kind="ghost"
-                        renderIcon={viewMode === 'grid' ? List : Grid}
-                        onClick={() => setViewMode((v) => (v === 'grid' ? 'list' : 'grid'))}
-                    >
-                        {viewMode === 'grid' ? 'List view' : 'Grid view'}
-                    </Button>
-                    <Button
-                        kind="ghost"
-                        renderIcon={showWeekends ? ViewOff : View}
-                        onClick={() => setShowWeekends((v) => !v)}
-                    >
-                        {showWeekends ? 'Hide weekends' : 'Show weekends'}
-                    </Button>
-                    <Button kind="tertiary" renderIcon={Renew} onClick={refresh}>
-                        {t('app.refresh')}
-                    </Button>
-                    <Button
-                        renderIcon={Add}
-                        onClick={() => {
-                            setFormMode('add');
-                            setEditEntry(null);
+                <div>
+                    <div className="page-header__actions">
+                        <Button kind="ghost" renderIcon={ArrowLeft} onClick={goToPreviousWeek}>
+                            {t('week.previousWeek')}
+                        </Button>
+                        <Button kind="ghost" onClick={goToToday}>{t('week.today')}</Button>
+                        <Button kind="ghost" renderIcon={ArrowRight} onClick={goToNextWeek}>
+                            {t('week.nextWeek')}
+                        </Button>
+                        <Button kind="tertiary" renderIcon={Renew} onClick={refresh}>
+                            {t('app.refresh')}
+                        </Button>
+                        <Button
+                            renderIcon={Add}
+                            onClick={() => {
+                                setFormMode('add');
+                                setEditEntry(null);
+                                setSelectedDate(formatDate(new Date()));
+                            }}
+                        >
+                            {t('app.add')}
+                        </Button>
+                    </div>
+                    <div className="page-header__actions">
+                        <Button
+                            kind="ghost"
+                            onClick={() => setMonthView((v) => !v)}
+                        >
+                            {monthView ? 'Week view' : 'Month view'}
+                        </Button>
+                        <Button
+                            kind="ghost"
+                            renderIcon={viewMode === 'grid' ? List : Grid}
+                            onClick={() => setViewMode((v) => (v === 'grid' ? 'list' : 'grid'))}
+                        >
+                            {viewMode === 'grid' ? 'List view' : 'Grid view'}
+                        </Button>
+                        <Button
+                            kind="ghost"
+                            renderIcon={showWeekends ? ViewOff : View}
+                            onClick={() => setShowWeekends((v) => !v)}
+                        >
+                            {showWeekends ? 'Hide weekends' : 'Show weekends'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
                             setSelectedDate(formatDate(new Date()));
                         }}
                     >
