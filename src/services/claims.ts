@@ -1,6 +1,6 @@
 export const ACTIVITY_TYPES: Record<string, number> = {
-    billable: 0,
-    vacation: 1,
+    vacation: 0,
+    billable: 1,
     holding: 2,
     education: 3,
     work_reduction: 4,

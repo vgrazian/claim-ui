@@ -18,19 +18,19 @@ import {
 
 describe('Activity Types', () => {
     it('should map activity type names to values', () => {
-        expect(getActivityValue('billable')).toBe(0);
-        expect(getActivityValue('vacation')).toBe(1);
-        expect(getActivityValue('presales')).toBe(7);
-        expect(getActivityValue('l104')).toBe(13);
-    });
+    expect(getActivityValue('vacation')).toBe(0);
+    expect(getActivityValue('billable')).toBe(1);
+    expect(getActivityValue('presales')).toBe(7);
+    expect(getActivityValue('l104')).toBe(13);
+  });
 
-    it('should return 0 for unknown activity type', () => {
-        expect(getActivityValue('unknown')).toBe(0);
-    });
+  it('should return 0 for unknown activity type', () => {
+    expect(getActivityValue('unknown')).toBe(0);
+  });
 
-    it('should map values back to names', () => {
-        expect(getActivityName(0)).toBe('billable');
-        expect(getActivityName(7)).toBe('presales');
+  it('should map values back to names', () => {
+    expect(getActivityName(0)).toBe('vacation');
+    expect(getActivityName(1)).toBe('billable');
         expect(getActivityName(13)).toBe('l104');
         expect(getActivityName(999)).toBe('billable');
     });
