@@ -348,6 +348,29 @@
     gap: 0.25rem;
 }
 
+.report-header-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+}
+
+.report-header-weekday {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    color: #8d8d8d;
+    letter-spacing: 0.5px;
+}
+
+.report-header-date {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.report-weekend-col {
+    background-color: #f5f5f5;
+}
+
 .report-totals-row {
     border-top: 2px solid #0f62fe;
     background-color: #f4f7fb;

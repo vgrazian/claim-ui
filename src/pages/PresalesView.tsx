@@ -12,11 +12,16 @@ import {
     Tag,
     Button,
     InlineLoading,
-    ProgressBar,
 } from '@carbon/react';
 import { Copy } from '@carbon/icons-react';
 import { MondayUser, queryItems, ClaimEntry } from '../services/api';
-import { itemToClaimEntry, formatDate } from '../services/claims';
+import {
+    itemToClaimEntry,
+    formatDate,
+    getWeekStart,
+    getWeekDates,
+} from '../services/claims';
+import { useWeekNavigation } from '../hooks/useData';
 
 const PRESALES_OPPORTUNITY_HOURS_LIMIT = 40;
 
@@ -40,26 +45,19 @@ interface OppRow {
 
 export default function PresalesView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
+    const { weekStart, goToPreviousWeek, goToNextWeek } = useWeekNavigation();
     const [claims, setClaims] = useState<ClaimEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copiedOpp, setCopiedOpp] = useState<string | null>(null);
 
-    const currentYear = new Date().getFullYear();
-    const yearStart = `${currentYear}-01-01`;
-    const today = formatDate(new Date());
+    const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
 
     const loadClaims = useCallback(async () => {
         setLoading(true);
         try {
-            const dates: string[] = [];
-            const start = new Date(yearStart);
-            const end = new Date(today);
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                dates.push(formatDate(new Date(d)));
-            }
-
-            const data = await queryItems(boardId, groupId, user.id, dates);
+            const dateFilter = weekDates.map((d) => formatDate(d));
+            const data = await queryItems(boardId, groupId, user.id, dateFilter);
 
             const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
             const entries = items
@@ -73,7 +71,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [boardId, groupId, user.id, yearStart, today]);
+    }, [boardId, groupId, user.id, weekDates]);
 
     useEffect(() => {
         loadClaims();
@@ -91,7 +89,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         // Group by comment (opportunity number)
         const map = new Map<string, OppRow>();
         presales.forEach((c) => {
-            const opp = (c.comment || c.workItem || c.customer || 'Unknown').trim();
+            const opp = (c.comment || c.customer || 'No opportunity #').trim();
             if (!map.has(opp)) {
                 map.set(opp, {
                     opportunity: opp,
@@ -140,6 +138,10 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         <div className="page-container">
             <div className="page-header">
                 <h2>{t('presales.title')}</h2>
+                <div className="page-header__actions">
+                    <Button kind="ghost" onClick={goToPreviousWeek}>{t('week.previousWeek')}</Button>
+                    <Button kind="ghost" onClick={goToNextWeek}>{t('week.nextWeek')}</Button>
+                </div>
             </div>
 
             {loading && <InlineLoading description={t('app.loading')} />}
@@ -148,14 +150,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             {!loading && !error && (
                 <>
                     <Tile className="mb-4">
-                        <strong>{t('presales.totalHours')}:</strong> {grandTotal.toFixed(1)}h{' '}
-                        {t('presales.limit', { limit: PRESALES_OPPORTUNITY_HOURS_LIMIT })}
-                        <ProgressBar
-                            value={Math.min((grandTotal / PRESALES_OPPORTUNITY_HOURS_LIMIT) * 100, 100)}
-                            max={100}
-                            label={`${grandTotal.toFixed(1)} / ${PRESALES_OPPORTUNITY_HOURS_LIMIT}h`}
-                            className="mt-2"
-                        />
+                        <strong>{t('presales.totalHours')}:</strong> {grandTotal.toFixed(1)}h
                     </Tile>
 
                     {oppRows.length === 0 ? (

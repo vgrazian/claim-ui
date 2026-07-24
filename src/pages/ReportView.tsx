@@ -27,6 +27,7 @@ interface Props {
 interface ReportRow {
     customer: string;
     workItem: string;
+    comment: string;
     days: Map<string, number>;
     totalHours: number;
 }
@@ -69,9 +70,9 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         const map = new Map<string, ReportRow>();
         const dayTotals: Record<string, number> = {};
         claims.forEach((c) => {
-            const key = `${c.customer}::${c.workItem}`;
+            const key = `${c.customer}::${c.workItem}::${c.comment || ''}`;
             if (!map.has(key)) {
-                map.set(key, { customer: c.customer, workItem: c.workItem, days: new Map(), totalHours: 0 });
+                map.set(key, { customer: c.customer, workItem: c.workItem, comment: c.comment || '', days: new Map(), totalHours: 0 });
             }
             const row = map.get(key)!;
             row.totalHours += c.hours;
@@ -84,11 +85,15 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     }, [claims]);
 
     const dayColumns = weekDates.map((d) => formatDate(d));
+    const weekendDates = new Set(
+        weekDates.filter((d) => d.getDay() === 0 || d.getDay() === 6).map((d) => formatDate(d))
+    );
     const tableRows = reportRows.map((r, i) => ({
-        id: `${r.customer}::${r.workItem}`,
+        id: `${r.customer}::${r.workItem}::${r.comment}`,
         index: i,
         customer: r.customer,
         workItem: r.workItem,
+        comment: r.comment,
         ...Object.fromEntries(dayColumns.map((d) => [d, r.days.get(d) || 0])),
         totalHours: r.totalHours,
     }));
@@ -96,10 +101,22 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const headers = [
         { key: 'customer', header: t('report.customer') },
         { key: 'workItem', header: t('report.workItem') },
-        ...dayColumns.map((d) => ({
-            key: d,
-            header: new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        })),
+        { key: 'comment', header: 'Opp #' },
+        ...dayColumns.map((d, i) => {
+            const date = weekDates[i];
+            const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return {
+                key: d,
+                header: (
+                    <div className="report-header-cell">
+                        <span className="report-header-weekday">{weekday}</span>
+                        <span className="report-header-date">{dateStr}</span>
+                    </div>
+                ),
+                isWeekend: date.getDay() === 0 || date.getDay() === 6,
+            };
+        }),
         { key: 'totalHours', header: t('report.totalHours') },
     ];
 
@@ -143,15 +160,21 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                 <Table {...getTableProps()} size="sm">
                                     <TableHead>
                                         <TableRow>
-                                            {hdrs.map((header) => (
-                                                <TableHeader
-                                                    {...getHeaderProps({ header })}
-                                                    key={header.key}
-                                                    className={header.key === 'totalHours' ? 'presales-total-col' : ''}
-                                                >
-                                                    {header.header}
-                                                </TableHeader>
-                                            ))}
+                                            {hdrs.map((header) => {
+                                                const isWeekend = (header as any).isWeekend;
+                                                return (
+                                                    <TableHeader
+                                                        {...getHeaderProps({ header })}
+                                                        key={header.key}
+                                                        className={
+                                                            (header.key === 'totalHours' ? 'presales-total-col ' : '') +
+                                                            (isWeekend ? 'report-weekend-col' : '')
+                                                        }
+                                                    >
+                                                        {header.header}
+                                                    </TableHeader>
+                                                );
+                                            })}
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -162,8 +185,9 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                                     {row.cells.map((cell: any) => {
                                                         const isTotal = cell.info?.header === 'totalHours';
                                                         const isDay = dayColumns.includes(cell.info?.header);
+                                                        const isWeekend = isDay && weekendDates.has(cell.info?.header);
                                                         return (
-                                                            <TableCell key={cell.id}>
+                                                            <TableCell key={cell.id} className={isWeekend ? 'report-weekend-col' : ''}>
                                                                 {isTotal ? (
                                                                     <div className="report-cell-actions">
                                                                         <Tag type="blue" size="sm">{cell.value}h</Tag>
@@ -195,7 +219,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                     </TableBody>
                                     <tfoot>
                                         <TableRow className="report-totals-row">
-                                            <TableCell colSpan={2}>
+                                            <TableCell colSpan={3}>
                                                 <strong>{t('report.totalHours')}</strong>
                                             </TableCell>
                                             {dayColumns.map((d) => (

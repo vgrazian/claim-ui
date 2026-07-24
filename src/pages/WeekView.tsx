@@ -23,6 +23,8 @@ import {
     Renew,
     View,
     ViewOff,
+    List,
+    Grid,
 } from '@carbon/icons-react';
 import { MondayUser } from '../services/api';
 import { useWeekNavigation, useClaims, useBoard } from '../hooks/useData';
