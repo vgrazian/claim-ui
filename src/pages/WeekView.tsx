@@ -389,14 +389,14 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                             <div className="week-entry__row">
                                 <div className="week-entry__info">
                                     <Tag type="green" size="sm">
-                                        {t('entry.activityTypes.' + claim.activityType, claim.activityType)}
+                                        {t(`entry.activityTypes.${claim.activityType}`, claim.activityType)}
                                     </Tag>
                                     <span>{claim.customer} / {claim.workItem}</span>
                                     <span className="week-entry__hours">{claim.hours}h</span>
                                 </div>
                                 <div className="week-entry__actions">
                                     <Button kind="ghost" size="sm" hasIconOnly renderIcon={Edit} iconDescription={t('app.edit')}
-                                        onClick={() => {{ setEditEntry({{ id: claim.id, date: claim.date, activityType: claim.activityType, customer: claim.customer, workItem: claim.workItem, hours: claim.hours, comment: claim.comment || '' }}); setFormMode('edit'); }}} />
+                                        onClick={() => { setEditEntry({ id: claim.id, date: claim.date, activityType: claim.activityType, customer: claim.customer, workItem: claim.workItem, hours: claim.hours, comment: claim.comment || '' }); setFormMode('edit'); }} />
                                     <Button kind="ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription={t('app.delete')}
                                         onClick={() => setDeleteConfirmId(claim.id)} />
                                 </div>
