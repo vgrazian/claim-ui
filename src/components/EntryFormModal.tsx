@@ -52,6 +52,13 @@ export default function EntryFormModal({
         setField('workItem', entry.workItem);
     };
 
+    const quickPreset = (type: string, wi = 'M.00556') => {
+        setField('activityType', type);
+        setField('workItem', wi);
+        setField('hours', 8);
+        setField('customer', type === 'vacation' ? '' : '');
+    };
+
     const uniqueCustomers = [...new Set(recentEntries.map((e) => e.customer))].filter(Boolean);
     const uniqueWorkItems = [...new Set(recentEntries.map((e) => e.workItem))].filter(Boolean);
 
@@ -76,6 +83,18 @@ export default function EntryFormModal({
                         onClose={() => { }}
                     />
                 )}
+
+                <div className="entry-form__quick-actions">
+                    <Button kind="tertiary" size="sm" onClick={() => quickPreset('vacation')}>
+                        Vacation
+                    </Button>
+                    <Button kind="tertiary" size="sm" onClick={() => quickPreset('l104')}>
+                        L.104
+                    </Button>
+                    <Button kind="tertiary" size="sm" onClick={() => quickPreset('holiday')}>
+                        Holiday
+                    </Button>
+                </div>
 
                 {recentEntries.length > 0 && (
                     <div className="entry-form__recent">
