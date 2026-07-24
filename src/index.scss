@@ -237,6 +237,12 @@
         border-left: 3px solid #0f62fe;
         background-color: #f0f7ff;
     }
+
+    &--selected {
+        border-left: 3px solid #0f62fe;
+        background-color: #d0e2ff;
+        box-shadow: inset 0 0 0 1px #0f62fe;
+    }
 }
 
 .week-day-header {

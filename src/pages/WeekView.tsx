@@ -289,7 +289,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     return (
                         <Tile
                             key={dateStr}
-                            className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''} ${monthView ? 'week-day-tile--compact' : ''}`}
+                            className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''} ${monthView ? 'week-day-tile--compact' : ''} ${monthView && selectedDayDetail === dateStr ? 'week-day-tile--selected' : ''}`}
                             onClick={monthView ? () => setSelectedDayDetail(dateStr) : undefined}
                         >
                             <div className="week-day-header">
