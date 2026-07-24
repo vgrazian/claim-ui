@@ -223,172 +223,171 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     </div>
                 </div>
             </div>
-                            setSelectedDate(formatDate(new Date()));
-                        }}
-                    >
-                        {t('app.add')}
-                    </Button>
-                </div>
-            </div>
 
             {loading && <InlineLoading description={t('app.loading')} />}
 
-            {/* Activity summary */}
-            {activitySummary.length > 0 && (
-                <Tile className="week-summary">
-                    <div className="week-summary__items">
-                        {activitySummary.map(([type, hours]) => (
-                            <div key={type} className="week-summary__item">
-                                <Tag type="green" size="sm">
-                                    {t(`entry.activityTypes.${type}`, type)}
-                                </Tag>
-                                <span className="week-summary__hours">{hours}h</span>
-                            </div>
-                        ))}
-                        <div className="week-summary__item week-summary__total">
-                            <strong>{t('week.totalHours')}</strong>
-                            <span className="week-summary__hours">{weekTotalHours}h</span>
-                        </div>
-                        <div className="week-summary__item week-summary__l104">
-                            <Tag type="teal" size="sm">Vacation</Tag>
-                            <span className="week-summary__hours">{vacationTotal}h</span>
-                        </div>
-                        <div className="week-summary__item week-summary__l104">
-                            <Tag type={l104Total > l104Max ? 'red' : 'teal'} size="sm">
-                                L.104
-                            </Tag>
-                            <span className="week-summary__hours">
-                                {l104Total}/{l104Max}h
-                            </span>
-                        </div>
+{/* Activity summary */ }
+{
+    activitySummary.length > 0 && (
+        <Tile className="week-summary">
+            <div className="week-summary__items">
+                {activitySummary.map(([type, hours]) => (
+                    <div key={type} className="week-summary__item">
+                        <Tag type="green" size="sm">
+                            {t(`entry.activityTypes.${type}`, type)}
+                        </Tag>
+                        <span className="week-summary__hours">{hours}h</span>
                     </div>
-                </Tile>
-            )}
-
-            <div className={`week-grid week-grid--${showWeekends ? '7' : '5'}cols ${viewMode === 'list' ? 'week-grid--list' : ''} ${monthView ? 'week-grid--month' : ''}`}>
-                {visibleDates.map((date, i) => {
-                    const dateStr = formatDate(date);
-                    const dayClaims = claimsByDate[dateStr] || [];
-                    const totalHours = dayClaims.reduce((sum, c) => sum + c.hours, 0);
-                    const isToday = dateStr === formatDate(new Date());
-
-                    return (
-                        <Tile
-                            key={dateStr}
-                            className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''}`}
-                        >
-                            <div className="week-day-header">
-                                <span className="week-day-label">{t(`week.${dayLabels[i]}`)}</span>
-                                <span className="week-day-date">
-                                    {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                </span>
-                                {totalHours > 0 && (
-                                    <Tag type="blue" size="sm">{totalHours}h</Tag>
-                                )}
-                            </div>
-                            <div className="week-day-entries">
-                                {dayClaims.length === 0 ? (
-                                    <p className="week-day-empty">{t('week.noEntries')}</p>
-                                ) : (
-                                    dayClaims.map((claim) => (
-                                        <div key={claim.id} className="week-entry">
-                                            <div className="week-entry__row">
-                                                <div className="week-entry__info">
-                                                    <Tag type="green" size="sm">
-                                                        {t(`entry.activityTypes.${claim.activityType}`, claim.activityType)}
-                                                    </Tag>
-                                                    <span className="week-entry__customer">{claim.customer}</span>
-                                                    <span className="week-entry__hours">{claim.hours}h</span>
-                                                </div>
-                                                <div className="week-entry__actions">
-                                                    <Button
-                                                        kind="ghost"
-                                                        size="sm"
-                                                        hasIconOnly
-                                                        renderIcon={Edit}
-                                                        iconDescription={t('app.edit')}
-                                                        onClick={() => {
-                                                            setEditEntry({
-                                                                id: claim.id,
-                                                                date: claim.date,
-                                                                activityType: claim.activityType,
-                                                                customer: claim.customer,
-                                                                workItem: claim.workItem,
-                                                                hours: claim.hours,
-                                                                comment: claim.comment || '',
-                                                            });
-                                                            setFormMode('edit');
-                                                        }}
-                                                    />
-                                                    <Button
-                                                        kind="ghost"
-                                                        size="sm"
-                                                        hasIconOnly
-                                                        renderIcon={TrashCan}
-                                                        iconDescription={t('app.delete')}
-                                                        onClick={() => setDeleteConfirmId(claim.id)}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {claim.comment && (
-                                                <div className="week-entry__comment" title={claim.comment}>
-                                                    {claim.comment}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            <Button
-                                kind="ghost"
-                                size="sm"
-                                className="week-day-add"
-                                onClick={() => {
-                                    setFormMode('add');
-                                    setEditEntry(null);
-                                    setSelectedDate(dateStr);
-                                }}
-                            >
-                                + {t('app.add')}
-                            </Button>
-                        </Tile>
-                    );
-                })}
+                ))}
+                <div className="week-summary__item week-summary__total">
+                    <strong>{t('week.totalHours')}</strong>
+                    <span className="week-summary__hours">{weekTotalHours}h</span>
+                </div>
+                <div className="week-summary__item week-summary__l104">
+                    <Tag type="teal" size="sm">Vacation</Tag>
+                    <span className="week-summary__hours">{vacationTotal}h</span>
+                </div>
+                <div className="week-summary__item week-summary__l104">
+                    <Tag type={l104Total > l104Max ? 'red' : 'teal'} size="sm">
+                        L.104
+                    </Tag>
+                    <span className="week-summary__hours">
+                        {l104Total}/{l104Max}h
+                    </span>
+                </div>
             </div>
+        </Tile>
+    )
+}
 
-            {formMode && (
-                <EntryFormModal
-                    mode={formMode}
-                    values={values}
-                    setField={setField}
-                    recentEntries={recentEntries}
-                    saving={saving}
-                    error={formError}
-                    onSubmit={submit}
-                    onClose={() => {
-                        setFormMode(null);
+<div className={`week-grid week-grid--${showWeekends ? '7' : '5'}cols ${viewMode === 'list' ? 'week-grid--list' : ''} ${monthView ? 'week-grid--month' : ''}`}>
+    {visibleDates.map((date, i) => {
+        const dateStr = formatDate(date);
+        const dayClaims = claimsByDate[dateStr] || [];
+        const totalHours = dayClaims.reduce((sum, c) => sum + c.hours, 0);
+        const isToday = dateStr === formatDate(new Date());
+
+        return (
+            <Tile
+                key={dateStr}
+                className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''}`}
+            >
+                <div className="week-day-header">
+                    <span className="week-day-label">{t(`week.${dayLabels[i]}`)}</span>
+                    <span className="week-day-date">
+                        {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                    {totalHours > 0 && (
+                        <Tag type="blue" size="sm">{totalHours}h</Tag>
+                    )}
+                </div>
+                <div className="week-day-entries">
+                    {dayClaims.length === 0 ? (
+                        <p className="week-day-empty">{t('week.noEntries')}</p>
+                    ) : (
+                        dayClaims.map((claim) => (
+                            <div key={claim.id} className="week-entry">
+                                <div className="week-entry__row">
+                                    <div className="week-entry__info">
+                                        <Tag type="green" size="sm">
+                                            {t(`entry.activityTypes.${claim.activityType}`, claim.activityType)}
+                                        </Tag>
+                                        <span className="week-entry__customer">{claim.customer}</span>
+                                        <span className="week-entry__hours">{claim.hours}h</span>
+                                    </div>
+                                    <div className="week-entry__actions">
+                                        <Button
+                                            kind="ghost"
+                                            size="sm"
+                                            hasIconOnly
+                                            renderIcon={Edit}
+                                            iconDescription={t('app.edit')}
+                                            onClick={() => {
+                                                setEditEntry({
+                                                    id: claim.id,
+                                                    date: claim.date,
+                                                    activityType: claim.activityType,
+                                                    customer: claim.customer,
+                                                    workItem: claim.workItem,
+                                                    hours: claim.hours,
+                                                    comment: claim.comment || '',
+                                                });
+                                                setFormMode('edit');
+                                            }}
+                                        />
+                                        <Button
+                                            kind="ghost"
+                                            size="sm"
+                                            hasIconOnly
+                                            renderIcon={TrashCan}
+                                            iconDescription={t('app.delete')}
+                                            onClick={() => setDeleteConfirmId(claim.id)}
+                                        />
+                                    </div>
+                                </div>
+                                {claim.comment && (
+                                    <div className="week-entry__comment" title={claim.comment}>
+                                        {claim.comment}
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+                <Button
+                    kind="ghost"
+                    size="sm"
+                    className="week-day-add"
+                    onClick={() => {
+                        setFormMode('add');
                         setEditEntry(null);
-                        reset();
-                    }}
-                />
-            )}
-
-            {deleteConfirmId && (
-                <Modal
-                    open
-                    modalHeading={t('entry.deleteTitle')}
-                    primaryButtonText={t('app.delete')}
-                    secondaryButtonText={t('app.cancel')}
-                    danger
-                    onRequestClose={() => setDeleteConfirmId(null)}
-                    onRequestSubmit={() => {
-                        handleDelete(deleteConfirmId);
-                        setDeleteConfirmId(null);
+                        setSelectedDate(dateStr);
                     }}
                 >
-                    <p>{t('entry.deleteConfirm')}</p>
-                </Modal>
-            )}
-        </div>
+                    + {t('app.add')}
+                </Button>
+            </Tile>
+        );
+    })}
+</div>
+
+{
+    formMode && (
+        <EntryFormModal
+            mode={formMode}
+            values={values}
+            setField={setField}
+            recentEntries={recentEntries}
+            saving={saving}
+            error={formError}
+            onSubmit={submit}
+            onClose={() => {
+                setFormMode(null);
+                setEditEntry(null);
+                reset();
+            }}
+        />
+    )
+}
+
+{
+    deleteConfirmId && (
+        <Modal
+            open
+            modalHeading={t('entry.deleteTitle')}
+            primaryButtonText={t('app.delete')}
+            secondaryButtonText={t('app.cancel')}
+            danger
+            onRequestClose={() => setDeleteConfirmId(null)}
+            onRequestSubmit={() => {
+                handleDelete(deleteConfirmId);
+                setDeleteConfirmId(null);
+            }}
+        >
+            <p>{t('entry.deleteConfirm')}</p>
+        </Modal>
+    )
+}
+        </div >
     );
 }
