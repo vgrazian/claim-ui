@@ -120,10 +120,6 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     );
 
     const dayLabels = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const visibleDates = useMemo(
-        () => showWeekends ? weekDates : weekDates.slice(0, 5),
-        [weekDates, showWeekends]
-    );
 
     // Summary: hours per activity type for the week
     const activitySummary = useMemo(() => {
