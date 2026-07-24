@@ -120,9 +120,6 @@ export default function ReportView({ user, boardId, groupId }: Props) {
         { key: 'totalHours', header: t('report.totalHours') },
     ];
 
-
-    const [copiedText, setCopiedText] = useState<string | null>(null);
-
     return (
         <div className="page-container">
             <div className="page-header">
