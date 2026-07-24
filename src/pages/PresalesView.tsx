@@ -58,7 +58,7 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [boardId, groupId, user.id, weekDates]);
+    }, [boardId, groupId, user.id]);
 
     useEffect(() => {
         loadClaims();
@@ -67,13 +67,13 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
     // Pivot: rows by opportunity (comment), columns by day
     const { oppRows, grandTotal } = useMemo(() => {
         const presales = claims.filter(
-            (c) => c.activityType === 'presales' && c.comment && c.comment.trim()
+            (c) => c.activityType === 'presales'
         );
 
-        // Group by comment (opportunity number)
+        // Group by workItem (opportunity number)
         const map = new Map<string, OppRow>();
         presales.forEach((c) => {
-            const opp = c.comment!.trim();
+            const opp = (c.workItem || c.comment || 'Unknown').trim();
             if (!map.has(opp)) {
                 map.set(opp, {
                     opportunity: opp,
