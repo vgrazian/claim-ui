@@ -21,11 +21,14 @@ import {
     Edit,
     TrashCan,
     Renew,
+    View,
+    ViewOff,
 } from '@carbon/icons-react';
 import { MondayUser } from '../services/api';
 import { useWeekNavigation, useClaims, useBoard } from '../hooks/useData';
 import { useEntryForm } from '../hooks/useEntryForm';
 import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS } from '../services/claims';
+import { useSettings } from '../context/SettingsContext';
 import EntryFormModal from '../components/EntryFormModal';
 
 interface Props {
@@ -36,12 +39,14 @@ interface Props {
 
 export default function WeekView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
+    const { settings } = useSettings();
     const { weekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
     const { claims, loading, error, refresh } = useClaims(weekStart, boardId, groupId, user.id);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
     const [editEntry, setEditEntry] = useState<any>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [showWeekends, setShowWeekends] = useState(settings.showWeekendsDefault);
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
 
@@ -73,6 +78,26 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     );
 
     const dayLabels = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const visibleDates = useMemo(
+        () => showWeekends ? weekDates : weekDates.slice(0, 5),
+        [weekDates, showWeekends]
+    );
+
+    // Summary: hours per activity type for the week
+    const activitySummary = useMemo(() => {
+        const summary: Record<string, number> = {};
+        claims.forEach((c) => {
+            summary[c.activityType] = (summary[c.activityType] || 0) + c.hours;
+        });
+        return Object.entries(summary)
+            .filter(([, hours]) => hours > 0)
+            .sort(([, a], [, b]) => b - a);
+    }, [claims]);
+
+    const weekTotalHours = useMemo(
+        () => claims.reduce((sum, c) => sum + c.hours, 0),
+        [claims]
+    );
 
     if (error) {
         return (
@@ -94,6 +119,13 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     <Button kind="ghost" renderIcon={ArrowRight} onClick={goToNextWeek}>
                         {t('week.nextWeek')}
                     </Button>
+                    <Button
+                        kind="ghost"
+                        renderIcon={showWeekends ? ViewOff : View}
+                        onClick={() => setShowWeekends((v) => !v)}
+                    >
+                        {showWeekends ? 'Hide weekends' : 'Show weekends'}
+                    </Button>
                     <Button kind="tertiary" renderIcon={Renew} onClick={refresh}>
                         {t('app.refresh')}
                     </Button>
@@ -112,8 +144,28 @@ export default function WeekView({ user, boardId, groupId }: Props) {
 
             {loading && <InlineLoading description={t('app.loading')} />}
 
-            <div className="week-grid">
-                {weekDates.map((date, i) => {
+            {/* Activity summary */}
+            {activitySummary.length > 0 && (
+                <Tile className="week-summary">
+                    <div className="week-summary__items">
+                        {activitySummary.map(([type, hours]) => (
+                            <div key={type} className="week-summary__item">
+                                <Tag type="green" size="sm">
+                                    {t(`entry.activityTypes.${type}`, type)}
+                                </Tag>
+                                <span className="week-summary__hours">{hours}h</span>
+                            </div>
+                        ))}
+                        <div className="week-summary__item week-summary__total">
+                            <strong>{t('week.totalHours')}</strong>
+                            <span className="week-summary__hours">{weekTotalHours}h</span>
+                        </div>
+                    </div>
+                </Tile>
+            )}
+
+            <div className={`week-grid week-grid--${showWeekends ? '7' : '5'}cols`}>
+                {visibleDates.map((date, i) => {
                     const dateStr = formatDate(date);
                     const dayClaims = claimsByDate[dateStr] || [];
                     const totalHours = dayClaims.reduce((sum, c) => sum + c.hours, 0);
@@ -146,6 +198,11 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                                                 <span className="week-entry__customer">{claim.customer}</span>
                                                 <span className="week-entry__hours">{claim.hours}h</span>
                                             </div>
+                                            {claim.comment && (
+                                                <div className="week-entry__comment" title={claim.comment}>
+                                                    {claim.comment}
+                                                </div>
+                                            )}
                                             <div className="week-entry__actions">
                                                 <Button
                                                     kind="ghost"

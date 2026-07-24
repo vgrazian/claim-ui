@@ -1,212 +1,358 @@
 // Claim UI - Custom styles over Carbon Design System
 
-.app-loading,
-.app-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
-  text-align: center;
+.app-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+    text-align: center;
 }
 
-.app-error h2 {
-  margin-bottom: 1rem;
-  color: #da1e28;
+.app-error-tile {
+    max-width: 600px;
+    margin: 2rem auto;
+    text-align: center;
+
+    h3 {
+        color: #da1e28;
+        margin-bottom: 0.5rem;
+    }
+}
+
+.app-error-hint {
+    font-size: 0.875rem;
+    color: #525252;
+    margin-top: 1rem;
+}
+
+// API Key Setup
+.api-setup-tile {
+    max-width: 520px;
+    margin: 4rem auto;
+    padding: 2rem;
+    text-align: center;
+
+    h3 {
+        margin-bottom: 1rem;
+    }
+}
+
+.api-setup-desc {
+    font-size: 0.875rem;
+    color: #525252;
+    margin-bottom: 0.75rem;
+}
+
+.api-setup-form {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+// Settings key form
+.settings-key-form {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .page-container {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-
-  h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-  }
-
-  &__actions {
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
     flex-wrap: wrap;
-  }
+    gap: 1rem;
+
+    h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
 }
 
 // Week View Grid
 .week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1rem;
+    display: grid;
+    gap: 1rem;
 
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(4, 1fr);
-  }
+    &--7cols {
+        grid-template-columns: repeat(7, 1fr);
+    }
 
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
+    &--5cols {
+        grid-template-columns: repeat(5, 1fr);
+    }
 
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
+    @media (max-width: 1200px) {
+        &.week-grid--7cols {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        &.week-grid--5cols {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+
+        &.week-grid--7cols,
+        &.week-grid--5cols {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+
+        &.week-grid--7cols,
+        &.week-grid--5cols {
+            grid-template-columns: 1fr;
+        }
+    }
 }
 
 .week-day-tile {
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
 
-  &--today {
-    border-left: 3px solid #0f62fe;
-    background-color: #f0f7ff;
-  }
+    &--today {
+        border-left: 3px solid #0f62fe;
+        background-color: #f0f7ff;
+    }
 }
 
 .week-day-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .week-day-label {
-  font-weight: 600;
-  font-size: 0.875rem;
+    font-weight: 600;
+    font-size: 0.875rem;
 }
 
 .week-day-date {
-  font-size: 0.75rem;
-  color: #525252;
-  margin-left: auto;
+    font-size: 0.75rem;
+    color: #525252;
+    margin-left: auto;
 }
 
 .week-day-entries {
-  flex: 1;
-  overflow-y: auto;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .week-day-empty {
-  font-size: 0.75rem;
-  color: #8d8d8d;
-  text-align: center;
-  padding: 0.5rem 0;
+    font-size: 0.75rem;
+    color: #8d8d8d;
+    text-align: center;
+    padding: 0.5rem 0;
 }
 
 .week-entry {
-  padding: 0.25rem 0;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &__info {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #e0e0e0;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.25rem;
-    font-size: 0.75rem;
-    flex: 1;
-    min-width: 0;
-  }
 
-  &__customer {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+    &:last-child {
+        border-bottom: none;
+    }
 
-  &__hours {
-    font-weight: 600;
-    margin-left: auto;
-  }
+    &__info {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        flex: 1;
+        min-width: 0;
+    }
 
-  &__actions {
-    display: flex;
-    flex-shrink: 0;
-  }
+    &__customer {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__hours {
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    &__actions {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    &__comment {
+        font-size: 0.7rem;
+        color: #6f6f6f;
+        padding: 0.125rem 0 0.125rem 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-style: italic;
+        border-left: 2px solid #e0e0e0;
+        margin-left: 0.125rem;
+    }
 }
 
 .week-day-add {
-  margin-top: 0.5rem;
-  width: 100%;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+// Week Summary
+.week-summary {
+    margin-bottom: 1rem;
+
+    &__items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        align-items: center;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    &__hours {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    &__total {
+        margin-left: auto;
+        padding-left: 1rem;
+        border-left: 1px solid #e0e0e0;
+    }
 }
 
 // Entry Form
 .entry-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 // Report
 .report-row--marked {
-  background-color: #fff8e1;
+    background-color: #fff8e1;
 }
 
 .report-daily-breakdown {
-  margin-top: 0.25rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
+    margin-top: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
 }
 
 .report-daily-item {
-  font-size: 0.75rem;
-  color: #525252;
+    font-size: 0.75rem;
+    color: #525252;
 }
 
 .report-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
 // Settings
 .settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
 }
 
 .settings-tile {
-  h3 {
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-  }
+    h3 {
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
 }
 
 .settings-hint {
-  font-size: 0.75rem;
-  color: #525252;
-  margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    color: #525252;
+    margin-bottom: 0.75rem;
 }
 
 .settings-api-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+// Presales
+.presales-table-wrap {
+    overflow-x: auto;
+}
+
+.presales-total-col {
+    border-left: 2px solid #0f62fe !important;
+}
+
+.presales-row--error {
+    background-color: #fff1f1;
+}
+
+.presales-error-tag {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.presales-error-label {
+    font-size: 0.625rem;
+}
+
+.presales-zero {
+    color: #c6c6c6;
+}
+
+.presales-opp-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.report-cell-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
 // Utilities
 .mb-4 {
-  margin-bottom: 1rem;
+    margin-bottom: 1rem;
 }
 
 .mt-2 {
-  margin-top: 0.5rem;
+    margin-top: 0.5rem;
 }

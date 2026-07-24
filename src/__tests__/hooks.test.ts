@@ -4,40 +4,40 @@ import { useWeekNavigation } from '../hooks/useData';
 import { getWeekStart, formatDate } from '../services/claims';
 
 describe('useWeekNavigation', () => {
-  it('should initialize with current week', () => {
-    const { result } = renderHook(() => useWeekNavigation(new Date(2025, 6, 24, 12)));
-    expect(formatDate(result.current.weekStart)).toBe('2025-07-21');
-  });
-
-  it('should navigate to previous week', () => {
-    const { result } = renderHook(() => useWeekNavigation(new Date(2025, 6, 24, 12)));
-
-    act(() => {
-      result.current.goToPreviousWeek();
+    it('should initialize with current week', () => {
+        const { result } = renderHook(() => useWeekNavigation(new Date(2025, 6, 24, 12)));
+        expect(formatDate(result.current.weekStart)).toBe('2025-07-21');
     });
 
-    expect(formatDate(result.current.weekStart)).toBe('2025-07-14');
-  });
+    it('should navigate to previous week', () => {
+        const { result } = renderHook(() => useWeekNavigation(new Date(2025, 6, 24, 12)));
 
-  it('should navigate to next week', () => {
-    const { result } = renderHook(() => useWeekNavigation(new Date(2025, 6, 24, 12)));
+        act(() => {
+            result.current.goToPreviousWeek();
+        });
 
-    act(() => {
-      result.current.goToNextWeek();
+        expect(formatDate(result.current.weekStart)).toBe('2025-07-14');
     });
 
-    expect(formatDate(result.current.weekStart)).toBe('2025-07-28');
-  });
+    it('should navigate to next week', () => {
+        const { result } = renderHook(() => useWeekNavigation(new Date(2025, 6, 24, 12)));
 
-  it('should go to today', () => {
-    const { result } = renderHook(() => useWeekNavigation(new Date(2025, 0, 1, 12)));
+        act(() => {
+            result.current.goToNextWeek();
+        });
 
-    act(() => {
-      result.current.goToToday();
+        expect(formatDate(result.current.weekStart)).toBe('2025-07-28');
     });
 
-    const today = new Date();
-    const expectedStart = formatDate(getWeekStart(today));
-    expect(formatDate(result.current.weekStart)).toBe(expectedStart);
-  });
+    it('should go to today', () => {
+        const { result } = renderHook(() => useWeekNavigation(new Date(2025, 0, 1, 12)));
+
+        act(() => {
+            result.current.goToToday();
+        });
+
+        const today = new Date();
+        const expectedStart = formatDate(getWeekStart(today));
+        expect(formatDate(result.current.weekStart)).toBe(expectedStart);
+    });
 });

@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import express from 'express';
 import cors from 'cors';
@@ -19,17 +19,28 @@ const CONFIG_PATH = join(
 const MONDAY_API = 'https://api.monday.com/v2';
 const BOARD_ID = '6500270039';
 
-function loadApiKey() {
+function loadConfig() {
     try {
         if (existsSync(CONFIG_PATH)) {
             const raw = readFileSync(CONFIG_PATH, 'utf-8');
-            const config = JSON.parse(raw);
-            return config.api_key || null;
+            return JSON.parse(raw);
         }
     } catch (e) {
         console.error('Failed to load config:', e.message);
     }
-    return null;
+    return {};
+}
+
+function loadApiKey() {
+    return loadConfig().api_key || null;
+}
+
+function saveConfig(config) {
+    const dir = dirname(CONFIG_PATH);
+    if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
 }
 
 async function proxyMonday(query, variables = {}) {
@@ -61,7 +72,92 @@ app.use(express.json());
 // Health check
 app.get('/api/health', (req, res) => {
     const apiKey = loadApiKey();
-    res.json({ status: 'ok', hasApiKey: !!apiKey });
+    const config = loadConfig();
+    res.json({
+        status: 'ok',
+        hasApiKey: !!apiKey,
+        userNameOverride: config.user_name_override || null,
+    });
+});
+
+// Get/set config (API key, user name override, weekend default)
+app.get('/api/config', (req, res) => {
+    try {
+        const config = loadConfig();
+        res.json({
+            hasApiKey: !!config.api_key,
+            apiKeyMasked: config.api_key
+                ? config.api_key.slice(0, 8) + '...' + config.api_key.slice(-4)
+                : null,
+            userNameOverride: config.user_name_override || null,
+            showWeekendsDefault: config.show_weekends_default || false,
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/config', async (req, res) => {
+    try {
+        const { apiKey, userNameOverride, showWeekendsDefault } = req.body;
+        const config = loadConfig();
+
+        let newApiKey = config.api_key;
+
+        // If a new API key is provided, validate it against Monday.com
+        if (apiKey !== undefined && apiKey !== null) {
+            if (apiKey === '') {
+                newApiKey = '';
+            } else {
+                // Validate by calling Monday.com API
+                try {
+                    const validationRes = await fetch(MONDAY_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: apiKey,
+                        },
+                        body: JSON.stringify({ query: 'query { me { id name email } }' }),
+                    });
+                    if (!validationRes.ok) {
+                        return res.status(400).json({ error: 'Invalid API key — Monday.com rejected it.' });
+                    }
+                    const validationData = await validationRes.json();
+                    if (validationData.errors) {
+                        return res.status(400).json({
+                            error: 'Invalid API key: ' + validationData.errors[0]?.message,
+                        });
+                    }
+                    newApiKey = apiKey;
+                } catch (e) {
+                    return res.status(400).json({ error: 'Could not validate API key: ' + e.message });
+                }
+            }
+        }
+
+        if (newApiKey !== undefined) {
+            config.api_key = newApiKey;
+        }
+        if (userNameOverride !== undefined) {
+            config.user_name_override = userNameOverride || null;
+        }
+        if (showWeekendsDefault !== undefined) {
+            config.show_weekends_default = showWeekendsDefault;
+        }
+
+        saveConfig(config);
+        res.json({
+            success: true,
+            hasApiKey: !!config.api_key,
+            apiKeyMasked: config.api_key
+                ? config.api_key.slice(0, 8) + '...' + config.api_key.slice(-4)
+                : null,
+            userNameOverride: config.user_name_override || null,
+            showWeekendsDefault: config.show_weekends_default || false,
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // Get current user
@@ -98,15 +194,32 @@ app.post('/api/items/query', async (req, res) => {
     try {
         const { boardId, groupId, userId, dateFilter, limit = 500 } = req.body;
 
-        const dateFilterStr = dateFilter
-            ? `{ column: "date4", operator: any, compare_value: [${dateFilter.map((d) => `"${d}"`).join(',')}] }`
-            : '';
+        // Build query_params as inline GraphQL (operators are enums, not strings)
+        let queryParamsInline = '';
+
+        if (userId || (dateFilter && dateFilter.length > 0)) {
+            const ruleParts = [];
+
+            // User filter
+            if (userId) {
+                ruleParts.push(`{ column_id: "person", compare_value: ["person-${userId}"], operator: any_of }`);
+            }
+
+            // Date filter
+            if (dateFilter && dateFilter.length > 0) {
+                const dateValues = [];
+                dateFilter.forEach((d) => dateValues.push(`"EXACT", "${d}"`));
+                ruleParts.push(`{ column_id: "date4", compare_value: [${dateValues.join(', ')}], operator: any_of }`);
+            }
+
+            queryParamsInline = `query_params: { rules: [${ruleParts.join(', ')}], operator: and }`;
+        }
 
         const query = `
       query($boardId: [ID!], $groupId: [String!], $limit: Int!) {
         boards(ids: $boardId) {
           groups(ids: $groupId) {
-            items_page(limit: $limit) {
+            items_page(limit: $limit, ${queryParamsInline}) {
               cursor
               items {
                 id name
