@@ -64,7 +64,7 @@ export default function EntryFormModal({
             primaryButtonDisabled={saving}
             onRequestClose={onClose}
             onRequestSubmit={onSubmit}
-            size="sm"
+            size="md"
         >
             <div className="entry-form">
                 {error && (
