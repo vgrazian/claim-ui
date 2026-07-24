@@ -35,7 +35,13 @@ export function useBoard(boardId: string) {
     return { board, loading, error };
 }
 
-export function useClaims(weekStart: Date, boardId: string, groupId: string, userId: number | null) {
+export function useClaims(
+    weekStart: Date,
+    boardId: string,
+    groupId: string,
+    userId: number | null,
+    customDates?: Date[]
+) {
     const [claims, setClaims] = useState<ClaimEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +50,7 @@ export function useClaims(weekStart: Date, boardId: string, groupId: string, use
         if (!boardId || !groupId || !userId) return;
         setLoading(true);
         try {
-            const dates = getWeekDates(weekStart);
+            const dates = customDates || getWeekDates(weekStart);
             const dateFilter = dates.map((d) => formatDate(d));
             const data = await queryItems(boardId, groupId, userId, dateFilter);
 
@@ -60,7 +66,7 @@ export function useClaims(weekStart: Date, boardId: string, groupId: string, use
         } finally {
             setLoading(false);
         }
-    }, [weekStart, boardId, groupId, userId]);
+    }, [weekStart, boardId, groupId, userId, customDates]);
 
     useEffect(() => {
         loadClaims();

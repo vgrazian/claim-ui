@@ -160,6 +160,15 @@
             margin-left: auto;
         }
     }
+
+    &--month {
+        grid-template-columns: repeat(7, 1fr) !important;
+        max-width: none;
+
+        .week-day-tile {
+            min-height: 120px;
+        }
+    }
 }
 
 .week-day-tile {
@@ -310,6 +319,7 @@
             margin-bottom: 0.375rem;
             display: block;
         }
+
         &-pills {
             display: flex;
             flex-wrap: wrap;

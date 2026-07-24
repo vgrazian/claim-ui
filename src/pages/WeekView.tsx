@@ -43,7 +43,10 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { weekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
-    const { claims, loading, error, refresh } = useClaims(weekStart, boardId, groupId, user.id);
+    const { claims, loading, error, refresh } = useClaims(
+        weekStart, boardId, groupId, user.id,
+        monthView ? monthDates : undefined
+    );
     const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
@@ -51,21 +54,41 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const [showWeekends, setShowWeekends] = useState(settings.showWeekendsDefault);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [monthView, setMonthView] = useState(false);
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
+    const monthDates = useMemo(() => {
+        const now = new Date(weekStart);
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const first = new Date(year, month, 1);
+        const last = new Date(year, month + 1, 0);
+        const dates: Date[] = [];
+        for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
+            dates.push(new Date(d));
+        }
+        return dates;
+    }, [weekStart]);
+
+    const queryDates = monthView ? monthDates : weekDates;
 
     const claimsByDate = useMemo(() => {
         const map: Record<string, typeof claims> = {};
-        weekDates.forEach((d) => {
+        queryDates.forEach((d) => {
             map[formatDate(d)] = [];
         });
         claims.forEach((c) => {
-            if (map[c.date]) {
+            if (map[c.date] !== undefined) {
                 map[c.date].push(c);
             }
         });
         return map;
-    }, [claims, weekDates]);
+    }, [claims, queryDates]);
+
+    const visibleDates = useMemo(
+        () => showWeekends ? queryDates : queryDates.filter((d) => d.getDay() !== 0 && d.getDay() !== 6),
+        [queryDates, showWeekends]
+    );
 
     const onFormSuccess = useCallback(() => {
         setFormMode(null);
@@ -165,6 +188,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     </Button>
                     <Button
                         kind="ghost"
+                        onClick={() => setMonthView((v) => !v)}
+                    >
+                        {monthView ? 'Week view' : 'Month view'}
+                    </Button>
+                    <Button
+                        kind="ghost"
                         renderIcon={viewMode === 'grid' ? List : Grid}
                         onClick={() => setViewMode((v) => (v === 'grid' ? 'list' : 'grid'))}
                     >
@@ -227,7 +256,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                 </Tile>
             )}
 
-            <div className={`week-grid week-grid--${showWeekends ? '7' : '5'}cols ${viewMode === 'list' ? 'week-grid--list' : ''}`}>
+            <div className={`week-grid week-grid--${showWeekends ? '7' : '5'}cols ${viewMode === 'list' ? 'week-grid--list' : ''} ${monthView ? 'week-grid--month' : ''}`}>
                 {visibleDates.map((date, i) => {
                     const dateStr = formatDate(date);
                     const dayClaims = claimsByDate[dateStr] || [];
