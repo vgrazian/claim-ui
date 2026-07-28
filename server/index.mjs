@@ -401,6 +401,8 @@ app.get('/api/items/recent', async (req, res) => {
         const cutoffStr = cutoff.toISOString().slice(0, 10);
 
         // Filter client-side by date range and extract unique templates
+        // Skip vacation(0), holiday(6), l104(13) — already quick-preset buttons
+        const SKIP_ACTIVITIES = new Set([0, 6, 13]);
         const templates = [];
         const seen = new Set();
 
@@ -415,14 +417,14 @@ app.get('/api/items/recent', async (req, res) => {
             let activityIdx = 0;
             try { activityIdx = parseInt(JSON.parse(statusCol?.value || '{}')?.index, 10) || 0; } catch { }
 
+            if (SKIP_ACTIVITIES.has(activityIdx)) continue;
+
             const customer = item.column_values?.find((c) => c.id === 'text__1')?.text || '';
             const workItem = item.column_values?.find((c) => c.id === 'text8__1')?.text || '';
-            const hoursCol = item.column_values?.find((c) => c.id === 'numbers__1');
-            let hours = 8;
-            try { hours = parseFloat(JSON.parse(hoursCol?.value || '{}')) || parseFloat(hoursCol?.text || '8') || 8; } catch { }
             const comment = item.column_values?.find((c) => c.id === 'text2__1' || c.id === 'long_text')?.text || '';
 
-            const key = `${activityIdx}::${customer}::${workItem}::${hours}`;
+            // Dedupe by activity + customer + workItem (hours always default to 8)
+            const key = `${activityIdx}::${customer}::${workItem}`;
             if (!seen.has(key)) {
                 seen.add(key);
                 templates.push({
@@ -430,7 +432,7 @@ app.get('/api/items/recent', async (req, res) => {
                     activityTypeName: getActivityName(activityIdx),
                     customer,
                     workItem,
-                    hours,
+                    hours: 8,
                     comment,
                     lastUsed: dateStr,
                 });
