@@ -13,6 +13,7 @@
         "build": "vite build",
         "start": "node server/index.mjs",
         "launch": "node launcher.js",
+        "update-app": "bash scripts/update-app.sh",
         "test": "vitest run",
         "test:watch": "vitest",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx"

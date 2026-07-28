@@ -1,6 +1,6 @@
 # Claim UI — Progress Log
 
-**Last updated:** 2026-07-24  
+**Last updated:** 2026-07-28  
 **Repo:** <https://github.com/vgrazian/claim-ui>  
 **Tests:** 43 passing, 6 test files, 0 failures  
 
@@ -39,6 +39,9 @@
 
 - [x] PWA: manifest.json + service worker + install prompt
 - [x] Cross-platform launcher (`npm run launch`)
+- [x] macOS `.app` bundle in `/Applications` with absolute-path launcher
+- [x] `update-app.sh` script — one-command rebuild + bundle refresh
+- [x] `Claim UI.command` double-clickable launcher with port cleanup
 - [x] README with full deployment instructions
 
 ---
@@ -66,4 +69,7 @@ npm start            # Express on :3001, serves built frontend
 
 # Or auto-launch browser
 npm run launch
+
+# Update macOS app bundle
+npm run update-app   # Rebuild + refresh /Applications/Claim UI.app
 ```

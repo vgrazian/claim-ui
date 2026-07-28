@@ -25,6 +25,18 @@ npm run launch
 
 `npm run launch` starts the server and opens the app in your default browser.
 
+### macOS App Bundle
+
+A native-feeling `.app` bundle is provided for macOS. Build it with:
+
+```bash
+npm run update-app
+```
+
+This creates (or updates) `Claim UI.app` in `/Applications`. You can then launch it from **Finder**, **Spotlight**, or the **Dock** — it starts the Express server and opens your browser automatically. The launch script uses absolute paths so it works regardless of shell PATH.
+
+The `Claim UI.command` file in the project root is an alternative double-clickable launcher that opens a Terminal window with visible output.
+
 ## Requirements
 
 - **Node.js** 18+
@@ -35,7 +47,7 @@ npm run launch
 The app reads the API key from the same config file used by the `claim` TUI:
 
 | Platform | Config Path |
-|---|---|
+| --- | --- |
 | **macOS** | `~/Library/Application Support/com.vgrazian.claim/config.json` |
 | **Linux** | `~/.config/com.vgrazian.claim/config.json` |
 | **Windows** | `%APPDATA%\com.vgrazian.claim\config.json` |
@@ -71,6 +83,11 @@ claim-ui/
 │   ├── context/          # SettingsContext
 │   ├── i18n/locales/     # en.json, it.json
 │   └── __tests__/        # 43 tests
+├── scripts/
+│   ├── update-app.sh     # Build + refresh macOS .app bundle
+│   ├── generate-icons.py # Generate PWA icon sizes
+│   └── set-mac-icon.py   # Set custom icon on macOS bundle
+├── Claim UI.command      # macOS double-clickable launcher (Terminal)
 ├── launcher.js           # Cross-platform launcher
 └── vite.config.ts        # Vite + proxy config
 ```

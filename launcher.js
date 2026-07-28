@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// claim-ui launcher — starts the app and opens the browser
+// claim-ui launcher — starts Express server (production mode) and opens browser
 const { exec, spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
@@ -7,7 +7,9 @@ const http = require('http');
 const PORT = process.env.PORT || 3001;
 const URL = `http://localhost:${PORT}`;
 
-// Start the server
+console.log('Starting Claim UI...');
+
+// Start the Express server (serves dist/ on port 3001)
 const server = spawn('node', [path.join(__dirname, 'server', 'index.mjs')], {
     stdio: 'inherit',
     cwd: __dirname,
