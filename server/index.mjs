@@ -290,11 +290,13 @@ app.post('/api/items/query', async (req, res) => {
 app.post('/api/items', async (req, res) => {
     try {
         const { boardId, groupId, itemName, columnValues } = req.body;
-        const columnValuesStr = JSON.stringify(columnValues).replace(/"([^"]+)":/g, '$1:');
+        // Monday.com expects column_values as a JSON-encoded string
+        const cvJson = JSON.stringify(columnValues);
+        const cvEscaped = cvJson.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
         const query = `
-      mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
-        create_item(board_id: $boardId, group_id: $groupId, item_name: $itemName, column_values: $columnValues) {
+      mutation($boardId: ID!, $groupId: String!, $itemName: String!) {
+        create_item(board_id: $boardId, group_id: $groupId, item_name: $itemName, column_values: "${cvEscaped}") {
           id name
         }
       }
@@ -304,7 +306,6 @@ app.post('/api/items', async (req, res) => {
             boardId: parseInt(boardId),
             groupId,
             itemName,
-            columnValues,
         });
         res.json(data);
     } catch (e) {
@@ -317,11 +318,12 @@ app.put('/api/items/:itemId', async (req, res) => {
     try {
         const { itemId } = req.params;
         const { boardId, columnValues } = req.body;
-        const columnValuesStr = JSON.stringify(columnValues).replace(/"([^"]+)":/g, '$1:');
+        const cvJson = JSON.stringify(columnValues);
+        const cvEscaped = cvJson.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
         const query = `
-      mutation($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-        change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {
+      mutation($boardId: ID!, $itemId: ID!) {
+        change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: "${cvEscaped}") {
           id name
         }
       }
@@ -330,7 +332,6 @@ app.put('/api/items/:itemId', async (req, res) => {
         const data = await proxyMonday(query, {
             boardId: parseInt(boardId),
             itemId: parseInt(itemId),
-            columnValues,
         });
         res.json(data);
     } catch (e) {
