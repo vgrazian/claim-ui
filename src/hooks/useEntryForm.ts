@@ -25,9 +25,14 @@ export function useEntryForm(
     groupId: string,
     userId: number,
     onSuccess: () => void,
-    editEntry?: { id: string } & FormValues | null
+    editEntry?: { id: string } & FormValues | null,
+    initialDate?: string
 ) {
-    const [values, setValues] = useState<FormValues>(editEntry || defaultFormValues);
+    const [values, setValues] = useState<FormValues>(() => {
+        if (editEntry) return editEntry;
+        if (initialDate) return { ...defaultFormValues, date: initialDate };
+        return defaultFormValues;
+    });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

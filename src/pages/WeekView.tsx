@@ -107,7 +107,8 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const onFormSuccess = useCallback(() => {
         setFormMode(null);
         setEditEntry(null);
-        refresh();
+        // Brief delay for Monday.com to index the new item
+        setTimeout(() => refresh(), 600);
     }, [refresh]);
 
     const { values, setField, saving, error: formError, submit, handleDelete, reset } = useEntryForm(
@@ -115,7 +116,8 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         groupId,
         user.id,
         onFormSuccess,
-        editEntry
+        editEntry,
+        formMode === 'add' ? selectedDate : undefined
     );
 
     const dayLabels = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
