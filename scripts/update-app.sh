@@ -48,7 +48,7 @@ cat > "$APP_PATH/Contents/Info.plist" << 'PLIST'
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSUIElement</key>
-    <false/>
+    <true/>
 </dict>
 </plist>
 PLIST
@@ -93,8 +93,22 @@ for i in \$(seq 1 30); do
     sleep 1
 done
 
-# ---- keep alive until Ctrl+C or terminal close ----
-wait "\$SERVER_PID"
+# ---- hide from Dock to prevent bouncing & "not responding" ----
+osascript -e '
+tell application "System Events"
+    repeat 5 times
+        try
+            set visible of process "Claim UI" to false
+            exit repeat
+        end try
+        delay 0.3
+    end repeat
+end tell' 2>/dev/null
+
+# ---- keep alive until server exits (poll, don't block) ----
+while kill -0 "\$SERVER_PID" 2>/dev/null; do
+    sleep 2
+done
 LAUNCHER
 chmod +x "$APP_PATH/Contents/MacOS/Claim UI"
 echo "  ✓ Launch script updated"
