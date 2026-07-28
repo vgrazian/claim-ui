@@ -356,7 +356,7 @@ app.delete('/api/items/:itemId', async (req, res) => {
     }
 });
 
-// Get recent entries for quick-fill templates (last N days, no date filter)
+// Get recent entries for quick-fill templates (last N days, filtered by user)
 app.get('/api/items/recent', async (req, res) => {
     try {
         const days = parseInt(req.query.days) || 28; // default 4 weeks
@@ -368,13 +368,14 @@ app.get('/api/items/recent', async (req, res) => {
             return res.status(400).json({ error: 'groupId and userId are required' });
         }
 
-        // Fetch all items from the group (no date filter — the Monday API
-        // returns items sorted by most-recent first, so we can limit)
+        // Fetch items filtered by user (person column), sorted most-recent first
+        const queryParamsInline = `query_params: { rules: [{ column_id: "person", compare_value: ["person-${userId}"], operator: any_of }], operator: and }`;
+
         const query = `
       query($boardId: [ID!], $groupId: [String!], $limit: Int!) {
         boards(ids: $boardId) {
           groups(ids: $groupId) {
-            items_page(limit: $limit) {
+            items_page(limit: $limit, ${queryParamsInline}) {
               cursor
               items {
                 id name
