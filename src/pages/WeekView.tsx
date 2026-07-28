@@ -27,7 +27,7 @@ import {
     Grid,
 } from '@carbon/icons-react';
 import { MondayUser } from '../services/api';
-import { useWeekNavigation, useClaims, useBoard, useMonthlyL104 } from '../hooks/useData';
+import { useWeekNavigation, useClaims, useBoard, useMonthlyL104, useRecentTemplates } from '../hooks/useData';
 import { useEntryForm } from '../hooks/useEntryForm';
 import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS } from '../services/claims';
 import { useSettings } from '../context/SettingsContext';
@@ -78,6 +78,9 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         monthView ? monthDates : undefined
     );
     const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id);
+    const { templates: recentTemplates } = useRecentTemplates(
+        boardId, groupId, user.id, settings.recentWeeksLookback
+    );
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
     const [editEntry, setEditEntry] = useState<any>(null);
@@ -106,21 +109,6 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         setEditEntry(null);
         refresh();
     }, [refresh]);
-
-    // Recent entries for quick-select
-    const recentEntries = useMemo(() => {
-        const seen = new Set<string>();
-        const result: Array<{ customer: string; workItem: string }> = [];
-        for (const c of [...claims].reverse()) {
-            if (!c.customer || !c.workItem) continue;
-            const key = `${c.customer}::${c.workItem}`;
-            if (!seen.has(key)) {
-                seen.add(key);
-                result.push({ customer: c.customer, workItem: c.workItem });
-            }
-        }
-        return result.slice(0, 10);
-    }, [claims]);
 
     const { values, setField, saving, error: formError, submit, handleDelete, reset } = useEntryForm(
         boardId,
@@ -423,7 +411,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         mode={formMode}
                         values={values}
                         setField={setField}
-                        recentEntries={recentEntries}
+                        recentTemplates={recentTemplates}
                         saving={saving}
                         error={formError}
                         onSubmit={submit}

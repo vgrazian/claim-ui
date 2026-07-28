@@ -8,6 +8,7 @@ import {
     TextInput,
     Button,
     InlineNotification,
+    NumberInput,
 } from '@carbon/react';
 import { useSettings } from '../context/SettingsContext';
 
@@ -184,6 +185,26 @@ export default function SettingsView() {
                         }}
                     />
                 </Tile>
+
+                <Tile className="settings-tile">
+                    <h3>Quick-Fill Lookback</h3>
+                    <p className="settings-hint">
+                        Number of past weeks to scan for recent entries. These appear as
+                        one-click templates in the Add Entry form.
+                    </p>
+                    <NumberInput
+                        id="settings-lookback"
+                        label="Weeks to look back"
+                        value={settings.recentWeeksLookback}
+                        min={1}
+                        max={52}
+                        step={1}
+                        onChange={(_, { value }) => {
+                            updateSettings({ recentWeeksLookback: value });
+                        }}
+                    />
+                </Tile>
+
                 <Tile className="settings-tile">
                     <h3>Install as Desktop App</h3>
                     <p className="settings-hint">

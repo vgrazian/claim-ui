@@ -17,6 +17,16 @@ export interface ClaimEntry {
     comment: string | null;
 }
 
+export interface RecentTemplate {
+    activityType: number;
+    activityTypeName: string;
+    customer: string;
+    workItem: string;
+    hours: number;
+    comment: string;
+    lastUsed: string;
+}
+
 export async function fetchHealth(): Promise<{ status: string; hasApiKey: boolean }> {
     const res = await fetch(`${API_BASE}/health`);
     if (!res.ok) throw new Error('Health check failed');
@@ -98,4 +108,23 @@ export async function deleteItem(itemId: string) {
     const data = await res.json();
     if (data.errors) throw new Error(data.errors[0]?.message || 'API error');
     return data;
+}
+
+export async function fetchRecentTemplates(
+    boardId: string,
+    groupId: string,
+    userId: number,
+    days: number = 28
+): Promise<RecentTemplate[]> {
+    const params = new URLSearchParams({
+        boardId,
+        groupId,
+        userId: String(userId),
+        days: String(days),
+    });
+    const res = await fetch(`${API_BASE}/items/recent?${params}`);
+    if (!res.ok) throw new Error('Failed to fetch recent templates');
+    const data = await res.json();
+    if (data.errors) throw new Error(data.errors[0]?.message || 'API error');
+    return data.templates || [];
 }

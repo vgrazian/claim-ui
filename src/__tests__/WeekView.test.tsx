@@ -18,6 +18,7 @@ vi.mock('../context/SettingsContext', () => ({
             boardId: '123',
             theme: 'light',
             showWeekendsDefault: false,
+            recentWeeksLookback: 4,
             userNameOverride: null,
         },
         updateSettings: vi.fn(),
@@ -58,6 +59,7 @@ vi.mock('../hooks/useData', () => ({
     useUser: () => ({ user: { id: 1, name: 'Test', email: 't@t.com' }, loading: false, error: null }),
     useBoard: () => ({ board: { groups: [{ id: 'g1', title: '2025' }] }, loading: false, error: null }),
     useMonthlyL104: () => ({ l104Total: 0, vacationTotal: 0, l104Max: 24 }),
+    useRecentTemplates: () => ({ templates: [], loading: false, error: null, refresh: vi.fn() }),
 }));
 
 import WeekView from '../pages/WeekView';

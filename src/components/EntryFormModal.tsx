@@ -11,6 +11,7 @@ import {
     Tag,
 } from '@carbon/react';
 import { ACTIVITY_TYPE_KEYS } from '../services/claims';
+import type { RecentTemplate } from '../services/api';
 
 interface Props {
     mode: 'add' | 'edit';
@@ -27,7 +28,7 @@ interface Props {
     error: string | null;
     onSubmit: () => void;
     onClose: () => void;
-    recentEntries?: Array<{ customer: string; workItem: string }>;
+    recentTemplates?: RecentTemplate[];
 }
 
 export default function EntryFormModal({
@@ -38,7 +39,7 @@ export default function EntryFormModal({
     error,
     onSubmit,
     onClose,
-    recentEntries = [],
+    recentTemplates = [],
 }: Props) {
     const { t } = useTranslation();
 
@@ -47,9 +48,13 @@ export default function EntryFormModal({
         text: t(`entry.activityTypes.${key}`, key),
     }));
 
-    const selectRecent = (entry: { customer: string; workItem: string }) => {
-        setField('customer', entry.customer);
-        setField('workItem', entry.workItem);
+    // Fill entire form from a template
+    const applyTemplate = (tmpl: RecentTemplate) => {
+        setField('activityType', tmpl.activityTypeName);
+        setField('customer', tmpl.customer);
+        setField('workItem', tmpl.workItem);
+        setField('hours', tmpl.hours);
+        if (tmpl.comment) setField('comment', tmpl.comment);
     };
 
     const quickPreset = (type: string, wi = 'M.00556') => {
@@ -59,8 +64,9 @@ export default function EntryFormModal({
         setField('customer', type === 'vacation' ? '' : '');
     };
 
-    const uniqueCustomers = [...new Set(recentEntries.map((e) => e.customer))].filter(Boolean);
-    const uniqueWorkItems = [...new Set(recentEntries.map((e) => e.workItem))].filter(Boolean);
+    // Derive autocomplete values from templates
+    const uniqueCustomers = [...new Set(recentTemplates.map((e) => e.customer))].filter(Boolean);
+    const uniqueWorkItems = [...new Set(recentTemplates.map((e) => e.workItem))].filter(Boolean);
 
     return (
         <Modal
@@ -96,20 +102,26 @@ export default function EntryFormModal({
                     </Button>
                 </div>
 
-                {recentEntries.length > 0 && (
-                    <div className="entry-form__recent">
-                        <span className="entry-form__recent-label">{t('entry.quickSelect')}:</span>
-                        <div className="entry-form__recent-pills">
-                            {recentEntries.slice(0, 8).map((e, i) => (
-                                <Tag
+                {recentTemplates.length > 0 && (
+                    <div className="entry-form__templates">
+                        <span className="entry-form__templates-label">{t('entry.quickSelect')}:</span>
+                        <div className="entry-form__templates-grid">
+                            {recentTemplates.slice(0, 8).map((tmpl, i) => (
+                                <button
                                     key={i}
-                                    type="cool-gray"
-                                    size="sm"
-                                    filter
-                                    onClick={() => selectRecent(e)}
+                                    type="button"
+                                    className="entry-form__template-card"
+                                    onClick={() => applyTemplate(tmpl)}
+                                    title={tmpl.comment || undefined}
                                 >
-                                    {e.customer} / {e.workItem}
-                                </Tag>
+                                    <Tag type="green" size="sm">
+                                        {t(`entry.activityTypes.${tmpl.activityTypeName}`, tmpl.activityTypeName)}
+                                    </Tag>
+                                    <span className="entry-form__template-text">
+                                        {tmpl.customer || '—'} / {tmpl.workItem || '—'}
+                                    </span>
+                                    <span className="entry-form__template-hours">{tmpl.hours}h</span>
+                                </button>
                             ))}
                         </div>
                     </div>

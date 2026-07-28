@@ -5,7 +5,7 @@ Web-based [Monday.com](https://monday.com) claim management tool with **IBM Carb
 ## Features
 
 - **Calendar view** — Week and month views with drag-free navigation
-- **Add/Edit/Delete** — Entry form with quick-select, autocomplete, and one-click presets (Vacation, L.104, Holiday)
+- **Add/Edit/Delete** — Entry form with quick-fill templates from recent weeks, autocomplete, and one-click presets (Vacation, L.104, Holiday)
 - **Report** — Pivot table with daily columns, customer/work-item/opportunity breakdown, totals footer, copy-to-clipboard
 - **Presales** — Opportunity tracking grouped by comment, >24h error flags, sorted by most recent
 - **Settings** — API key management, user name/email, language (EN/IT), dark theme, weekend defaults

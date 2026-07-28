@@ -28,6 +28,30 @@ const CONFIG_PATHS = getConfigPaths();
 const MONDAY_API = 'https://api.monday.com/v2';
 const BOARD_ID = '6500270039';
 
+const ACTIVITY_TYPES = {
+    vacation: 0,
+    billable: 1,
+    holding: 2,
+    education: 3,
+    work_reduction: 4,
+    tbd: 5,
+    holiday: 6,
+    presales: 7,
+    illness: 8,
+    paid_not_worked: 9,
+    intellectual_capital: 10,
+    business_development: 11,
+    overhead: 12,
+    l104: 13,
+};
+
+function getActivityName(value) {
+    for (const [key, val] of Object.entries(ACTIVITY_TYPES)) {
+        if (val === value) return key;
+    }
+    return 'billable';
+}
+
 function findConfigPath() {
     for (const p of CONFIG_PATHS) {
         if (existsSync(p)) return p;
@@ -327,6 +351,95 @@ app.delete('/api/items/:itemId', async (req, res) => {
 
         const data = await proxyMonday(query, { itemId: parseInt(itemId) });
         res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Get recent entries for quick-fill templates (last N days, no date filter)
+app.get('/api/items/recent', async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 28; // default 4 weeks
+        const boardId = req.query.boardId || BOARD_ID;
+        const groupId = req.query.groupId;
+        const userId = req.query.userId;
+
+        if (!groupId || !userId) {
+            return res.status(400).json({ error: 'groupId and userId are required' });
+        }
+
+        // Fetch all items from the group (no date filter — the Monday API
+        // returns items sorted by most-recent first, so we can limit)
+        const query = `
+      query($boardId: [ID!], $groupId: [String!], $limit: Int!) {
+        boards(ids: $boardId) {
+          groups(ids: $groupId) {
+            items_page(limit: $limit) {
+              cursor
+              items {
+                id name
+                column_values {
+                  id value text
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+        const data = await proxyMonday(query, {
+            boardId: [parseInt(boardId)],
+            groupId: [groupId],
+            limit: 500,
+        });
+
+        const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+        // Filter client-side by date range and extract unique templates
+        const templates = [];
+        const seen = new Set();
+
+        for (const item of items) {
+            const dateCol = item.column_values?.find((c) => c.id === 'date4');
+            if (!dateCol?.value) continue;
+            let dateStr = '';
+            try { dateStr = JSON.parse(dateCol.value)?.date; } catch { continue; }
+            if (!dateStr || dateStr < cutoffStr) continue;
+
+            const statusCol = item.column_values?.find((c) => c.id === 'status');
+            let activityIdx = 0;
+            try { activityIdx = parseInt(JSON.parse(statusCol?.value || '{}')?.index, 10) || 0; } catch { }
+
+            const customer = item.column_values?.find((c) => c.id === 'text__1')?.text || '';
+            const workItem = item.column_values?.find((c) => c.id === 'text8__1')?.text || '';
+            const hoursCol = item.column_values?.find((c) => c.id === 'numbers__1');
+            let hours = 8;
+            try { hours = parseFloat(JSON.parse(hoursCol?.value || '{}')) || parseFloat(hoursCol?.text || '8') || 8; } catch { }
+            const comment = item.column_values?.find((c) => c.id === 'text2__1' || c.id === 'long_text')?.text || '';
+
+            const key = `${activityIdx}::${customer}::${workItem}::${hours}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                templates.push({
+                    activityType: activityIdx,
+                    activityTypeName: getActivityName(activityIdx),
+                    customer,
+                    workItem,
+                    hours,
+                    comment,
+                    lastUsed: dateStr,
+                });
+            }
+        }
+
+        // Sort by most recently used
+        templates.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed));
+
+        res.json({ templates: templates.slice(0, 20) });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

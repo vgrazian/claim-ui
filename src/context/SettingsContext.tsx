@@ -6,6 +6,7 @@ interface Settings {
     boardId: string;
     theme: 'light' | 'dark';
     showWeekendsDefault: boolean;
+    recentWeeksLookback: number;
     userNameOverride: string | null;
 }
 
@@ -26,6 +27,7 @@ const defaultSettings: Settings = {
     boardId: '6500270039',
     theme: 'light',
     showWeekendsDefault: false,
+    recentWeeksLookback: 4,
     userNameOverride: null,
 };
 

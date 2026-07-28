@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchUser, fetchBoard, queryItems, MondayUser, ClaimEntry } from '../services/api';
+import { fetchUser, fetchBoard, queryItems, fetchRecentTemplates, MondayUser, ClaimEntry, RecentTemplate } from '../services/api';
 import { itemToClaimEntry, getWeekStart, getWeekDates, formatDate } from '../services/claims';
 import { useSettings } from '../context/SettingsContext';
 
@@ -139,4 +139,37 @@ export function useMonthlyL104(boardId: string, groupId: string, userId: number 
     }, [boardId, groupId, userId]);
 
     return { l104Total, vacationTotal, l104Max: L104_MAX };
+}
+
+export function useRecentTemplates(
+    boardId: string,
+    groupId: string,
+    userId: number | null,
+    lookbackWeeks: number = 4
+) {
+    const [templates, setTemplates] = useState<RecentTemplate[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const days = lookbackWeeks * 7;
+
+    const load = useCallback(async () => {
+        if (!boardId || !groupId || !userId) return;
+        setLoading(true);
+        try {
+            const data = await fetchRecentTemplates(boardId, groupId, userId, days);
+            setTemplates(data);
+            setError(null);
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [boardId, groupId, userId, days]);
+
+    useEffect(() => {
+        load();
+    }, [load]);
+
+    return { templates, loading, error, refresh: load };
 }

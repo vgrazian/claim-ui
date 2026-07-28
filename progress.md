@@ -13,11 +13,12 @@
 - [x] **Calendar** — Week/month views with grid/list toggle, weekend hide/show, quick date picker
 - [x] **Report** — Pivot table with daily columns, customer/work-item/opp breakdown, totals footer, month view
 - [x] **Presales** — Opportunity list grouped by comment, sorted by most recent, >24h error flag, search/filter
-- [x] **Settings** — Language (EN/IT), API key management, user name/email, dark theme, weekend defaults
+- [x] **Settings** — Language (EN/IT), API key management, user name/email, dark theme, weekend defaults, quick-fill lookback weeks
 
 ### Data & API
 
 - [x] Monday.com GraphQL proxy through Express backend
+- [x] `/api/items/recent` endpoint — fetches unique entry templates from last N days
 - [x] User filtering via `person` column (matches TUI behavior)
 - [x] Activity type mapping (vacation=0, billable=1 — matches TUI)
 - [x] Comment column: `text2__1` / `long_text`
@@ -27,6 +28,7 @@
 
 - [x] IBM Carbon Design System (`@carbon/react`)
 - [x] Keyboard shortcuts: ←/→ nav, a=add, t=today
+- [x] Quick-fill templates: one-click fill from recent weeks (configurable lookback)
 - [x] Quick-select pills + autocomplete in entry form
 - [x] Quick-action buttons: Vacation, L.104, Holiday
 - [x] Auto-fill M.00556 for vacation/l104/work_reduction
