@@ -60,7 +60,7 @@ export function useEntryForm(
                 text__1: values.customer,
                 text8__1: values.workItem,
                 numbers__1: values.hours,
-                text: values.comment || '',
+                text2__1: values.comment || '',
             };
 
             const itemName = `${values.customer || 'Unknown'} - ${values.workItem || 'N/A'} - ${values.hours}h`;
