@@ -48,7 +48,7 @@ cat > "$APP_PATH/Contents/Info.plist" << 'PLIST'
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSUIElement</key>
-    <true/>
+    <false/>
 </dict>
 </plist>
 PLIST
@@ -65,7 +65,13 @@ URL="http://localhost:\${PORT}"
 
 cd "\$PROJECT_DIR" || exit 1
 
-# ---- kill any existing server on our port ----
+# ---- if server already running, just re-open browser and exit ----
+if curl -s -o /dev/null -w "%{http_code}" "\$URL/api/health" 2>/dev/null | grep -q "200"; then
+    open "\$URL"
+    exit 0
+fi
+
+# ---- kill any stale process on our port ----
 lsof -ti:\${PORT} | xargs kill -9 2>/dev/null
 sleep 0.5
 
@@ -92,18 +98,6 @@ for i in \$(seq 1 30); do
     fi
     sleep 1
 done
-
-# ---- hide from Dock to prevent bouncing & "not responding" ----
-osascript -e '
-tell application "System Events"
-    repeat 5 times
-        try
-            set visible of process "Claim UI" to false
-            exit repeat
-        end try
-        delay 0.3
-    end repeat
-end tell' 2>/dev/null
 
 # ---- keep alive until server exits (poll, don't block) ----
 while kill -0 "\$SERVER_PID" 2>/dev/null; do
