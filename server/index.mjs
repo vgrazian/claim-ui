@@ -401,8 +401,9 @@ app.get('/api/items/recent', async (req, res) => {
         const cutoffStr = cutoff.toISOString().slice(0, 10);
 
         // Filter client-side by date range and extract unique templates
-        // Skip vacation(0), holiday(6), l104(13) — already quick-preset buttons
-        const SKIP_ACTIVITIES = new Set([0, 6, 13]);
+        // Skip personal/non-billable types — already quick-presets or noise
+        //   0=vacation, 4=work_reduction, 6=holiday, 7=presales, 8=illness, 13=l104
+        const SKIP_ACTIVITIES = new Set([0, 4, 6, 7, 8, 13]);
         const templates = [];
         const seen = new Set();
 
@@ -421,6 +422,10 @@ app.get('/api/items/recent', async (req, res) => {
 
             const customer = item.column_values?.find((c) => c.id === 'text__1')?.text || '';
             const workItem = item.column_values?.find((c) => c.id === 'text8__1')?.text || '';
+
+            // Skip entries with no useful identifiers
+            if (!customer && !workItem) continue;
+
             const comment = item.column_values?.find((c) => c.id === 'text2__1' || c.id === 'long_text')?.text || '';
 
             // Dedupe by activity + customer + workItem (hours always default to 8)
