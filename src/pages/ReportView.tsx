@@ -15,7 +15,7 @@ import {
 } from '@carbon/react';
 import { Copy, TrashCan } from '@carbon/icons-react';
 import { MondayUser, queryItems, ClaimEntry } from '../services/api';
-import { itemToClaimEntry, getWeekStart, getWeekDates, formatDate } from '../services/claims';
+import { itemToClaimEntry, getWeekStart, getWeekDates, formatDate, getMonthGridDates } from '../services/claims';
 import { useWeekNavigation } from '../hooks/useData';
 
 interface Props {
@@ -45,19 +45,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
     const [markedRows, setMarkedRows] = useState<Set<string>>(new Set());
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
-    const monthDates = useMemo(() => {
-        const now = new Date(weekStart);
-        const first = new Date(now.getFullYear(), now.getMonth(), 1);
-        const day = first.getDay();
-        const start = new Date(first);
-        start.setDate(first.getDate() - (day === 0 ? 6 : day - 1));
-        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        const dates: Date[] = [];
-        for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 1)) {
-            dates.push(new Date(d));
-        }
-        return dates;
-    }, [weekStart]);
+    const monthDates = useMemo(() => getMonthGridDates(weekStart), [weekStart]);
     const queryDates = monthView ? monthDates : weekDates;
 
     const loadClaims = useCallback(async () => {
@@ -176,11 +164,11 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                             });
                         }}
                     >
-                        {monthView ? 'Week view' : 'Month view'}
+                        {monthView ? t('settings.report.weekView') : t('settings.report.monthView')}
                     </Button>
                     {markedRows.size > 0 && (
                         <Button kind="danger--ghost" onClick={() => setMarkedRows(new Set())}>
-                            Clear {markedRows.size}
+                            {t('settings.clearMarks', { count: markedRows.size })}
                         </Button>
                     )}
                 </div>

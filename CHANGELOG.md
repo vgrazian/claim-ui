@@ -1,0 +1,66 @@
+# Changelog
+
+## [0.2.1] - 2025-07-24
+
+### Fixed
+- Calendar header "Add" button now pre-selects today only when today is visible in
+  the current view. When navigating to a past or future week/month, it defaults to
+  the first visible day instead of always using today's date. Per-day tile "Add"
+  buttons were already correct and unchanged.
+
+### Added
+- Presales quick-preset button in the entry form (alongside Vacation / L.104 / Holiday).
+  Clicking it sets activity type to Presales, work item to M.00556, hours to 8h.
+- When activity type is Presales, a list of available opportunity numbers (derived from
+  recent templates, showing those with >= 8h remaining before the 24h limit) appears
+  below the comment field as one-click chips. Clicking a chip fills the comment/opportunity
+  field. If only one opportunity is available it is auto-filled when the preset is clicked.
+- New i18n keys: entry.presalesAvailable (EN + IT).
+
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2025-07-24
+
+### Security
+- Bind Express server to 127.0.0.1 (loopback only) instead of 0.0.0.0 — prevents
+  the Monday.com API proxy from being reachable by other devices on the LAN.
+- Restrict CORS to localhost origins only (ports 3001 and 5173); previously all
+  origins were allowed, which could expose the proxy to any page on the network.
+- Validate userId as a positive integer and dateFilter entries as YYYY-MM-DD strings
+  before interpolating them into GraphQL query strings, closing a GraphQL injection
+  vector in POST /api/items/query and GET /api/items/recent.
+
+### Fixed
+- useEntryForm: form values no longer remain stale when switching between entries
+  without closing the modal. A useEffect now re-syncs values whenever editEntry.id
+  changes.
+- EntryFormModal: the X button on the error InlineNotification now correctly clears
+  the error (was a no-op before). A new onClearError prop is threaded from the hook
+  through WeekView into the modal.
+- PWA install button in SettingsView now correctly defers and replays the browser
+  beforeinstallprompt event. Previously it dispatched a synthetic event that had no
+  effect. The button is hidden when the prompt is not available and replaced with
+  manual installation instructions.
+- useMonthlyL104: errors are now logged to console instead of silently swallowed.
+- All catch blocks in useData.ts and useEntryForm.ts: replaced catch (e: any) with
+  the safe e instanceof Error ? e.message : String(e) pattern.
+
+### Changed
+- ACTIVITY_TYPES constant extracted to src/shared/activityTypes.mjs and shared
+  between server/index.mjs and src/services/claims.ts, eliminating the previous
+  duplication that could cause the two copies to diverge.
+- getMonthGridDates() extracted to src/services/claims.ts and used in both WeekView
+  and ReportView, replacing verbatim-duplicated month-grid date calculation logic.
+- editEntry state in WeekView typed explicitly instead of using any.
+- i18n: all previously hard-coded English strings in WeekView (week/month/list/grid
+  view toggles, show/hide weekends, close button), PresalesView (search placeholder,
+  filter toggle labels, no-match message, column header), ReportView (view toggle,
+  clear marks button), and SettingsView (user section, weekend default, quick-fill
+  lookback, install app, API key form) now use t() translation calls.
+- New translation keys added to both en.json and it.json for all of the above.
+- Month-view day tiles in WeekView are now keyboard-accessible: role="button",
+  tabIndex=0, and onKeyDown (Enter/Space) handlers added.

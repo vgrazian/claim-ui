@@ -124,23 +124,23 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             <div className="page-header">
                 <h2>{t('presales.title')}</h2>
                 <div className="presales-search">
-                    <TextInput
-                        id="presales-search"
-                        labelText=""
-                        placeholder="Search opportunity..."
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        size="sm"
-                    />
-                    <Toggle
-                        id="under24-toggle"
-                        labelA="All"
-                        labelB="Under 24h"
-                        toggled={under24Only}
-                        onToggle={(checked) => setUnder24Only(checked)}
-                        size="sm"
-                    />
-                </div>
+                        <TextInput
+                            id="presales-search"
+                            labelText=""
+                            placeholder={t('presales.searchPlaceholder')}
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            size="sm"
+                        />
+                        <Toggle
+                            id="under24-toggle"
+                            labelA={t('presales.allLabel')}
+                            labelB={t('presales.under24Label')}
+                            toggled={under24Only}
+                            onToggle={(checked) => setUnder24Only(checked)}
+                            size="sm"
+                        />
+                    </div>
             </div>
 
             {loading && <InlineLoading description={t('app.loading')} />}
@@ -155,14 +155,14 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
                     {oppRows.length === 0 ? (
                         <Tile>{t('presales.noData')}</Tile>
                     ) : filteredRows.length === 0 ? (
-                        <Tile>No opportunities match the filter.</Tile>
+                        <Tile>{t('presales.noMatch')}</Tile>
                     ) : (
                         <div className="presales-table-wrap">
                             <table className="presales-custom-table">
                                 <thead>
                                     <tr>
                                         <th>{t('presales.opportunity')}</th>
-                                        <th>Dates & Hours</th>
+                                        <th>{t('presales.datesAndHours')}</th>
                                         <th className="presales-total-col">{t('presales.totalHours')}</th>
                                     </tr>
                                 </thead>

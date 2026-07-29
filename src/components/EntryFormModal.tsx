@@ -13,6 +13,15 @@ import {
 import { ACTIVITY_TYPE_KEYS } from '../services/claims';
 import type { RecentTemplate } from '../services/api';
 
+interface PresalesOpp {
+    /** Opportunity number / label (the comment field value) */
+    opportunity: string;
+    /** Hours already logged against this opportunity */
+    hoursLogged: number;
+    /** Hours remaining before the 24h warning threshold */
+    hoursRemaining: number;
+}
+
 interface Props {
     mode: 'add' | 'edit';
     values: {
@@ -26,9 +35,12 @@ interface Props {
     setField: (field: string, value: string | number) => void;
     saving: boolean;
     error: string | null;
+    onClearError: () => void;
     onSubmit: () => void;
     onClose: () => void;
     recentTemplates?: RecentTemplate[];
+    /** Presales opportunities that still have >= 8h available (total < 24h) */
+    presalesOpportunities?: PresalesOpp[];
 }
 
 export default function EntryFormModal({
@@ -37,9 +49,11 @@ export default function EntryFormModal({
     setField,
     saving,
     error,
+    onClearError,
     onSubmit,
     onClose,
     recentTemplates = [],
+    presalesOpportunities = [],
 }: Props) {
     const { t } = useTranslation();
 
@@ -61,7 +75,18 @@ export default function EntryFormModal({
         setField('activityType', type);
         setField('workItem', wi);
         setField('hours', 8);
-        setField('customer', type === 'vacation' ? '' : '');
+        setField('customer', '');
+    };
+
+    const presalesPreset = () => {
+        setField('activityType', 'presales');
+        setField('workItem', 'M.00556');
+        setField('hours', 8);
+        setField('customer', '');
+        // If there is exactly one available opportunity, pre-fill it
+        if (presalesOpportunities.length === 1) {
+            setField('comment', presalesOpportunities[0].opportunity);
+        }
     };
 
     // Derive autocomplete values from templates
@@ -86,7 +111,7 @@ export default function EntryFormModal({
                         title={t('app.error')}
                         subtitle={error}
                         lowContrast
-                        onClose={() => { }}
+                        onClose={onClearError}
                     />
                 )}
 
@@ -99,6 +124,9 @@ export default function EntryFormModal({
                     </Button>
                     <Button kind="tertiary" size="sm" onClick={() => quickPreset('holiday')}>
                         Holiday
+                    </Button>
+                    <Button kind="tertiary" size="sm" onClick={presalesPreset}>
+                        {t('entry.activityTypes.presales')}
                     </Button>
                 </div>
 
@@ -189,6 +217,31 @@ export default function EntryFormModal({
                     value={values.comment}
                     onChange={(e) => setField('comment', e.target.value)}
                 />
+                {/*
+                  * Opportunity suggestions: shown as a datalist on the comment field
+                  * when presales type is selected and there are available opportunities.
+                  * The <TextArea> doesn't support the `list` attribute directly, so we
+                  * render a separate autocomplete <input> that is only shown for presales.
+                  */}
+                {values.activityType === 'presales' && presalesOpportunities.length > 0 && (
+                    <div className="entry-form__presales-opps">
+                        <span className="entry-form__templates-label">{t('entry.presalesAvailable')}:</span>
+                        <div className="entry-form__presales-opp-list">
+                            {presalesOpportunities.map((opp) => (
+                                <button
+                                    key={opp.opportunity}
+                                    type="button"
+                                    className="entry-form__presales-opp-btn"
+                                    onClick={() => setField('comment', opp.opportunity)}
+                                    title={`${opp.hoursLogged}h logged, ${opp.hoursRemaining}h remaining`}
+                                >
+                                    <span className="entry-form__presales-opp-name">{opp.opportunity}</span>
+                                    <Tag type="blue" size="sm">{opp.hoursLogged}h / 24h</Tag>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </Modal>
     );

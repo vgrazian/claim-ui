@@ -29,7 +29,7 @@ import {
 import { MondayUser } from '../services/api';
 import { useWeekNavigation, useClaims, useBoard, useMonthlyL104, useRecentTemplates } from '../hooks/useData';
 import { useEntryForm } from '../hooks/useEntryForm';
-import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS } from '../services/claims';
+import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS, getMonthGridDates } from '../services/claims';
 import { useSettings } from '../context/SettingsContext';
 import EntryFormModal from '../components/EntryFormModal';
 
@@ -57,20 +57,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     }, [monthView]);
 
     const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
-    const monthDates = useMemo(() => {
-        const now = new Date(weekStart);
-        const first = new Date(now.getFullYear(), now.getMonth(), 1);
-        // Start from the Monday of the week containing the 1st
-        const day = first.getDay();
-        const start = new Date(first);
-        start.setDate(first.getDate() - (day === 0 ? 6 : day - 1));
-        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        const dates: Date[] = [];
-        for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 1)) {
-            dates.push(new Date(d));
-        }
-        return dates;
-    }, [weekStart]);
+    const monthDates = useMemo(() => getMonthGridDates(weekStart), [weekStart]);
     const queryDates = monthView ? monthDates : weekDates;
 
     const { claims, loading, error, refresh } = useClaims(
@@ -81,9 +68,31 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const { templates: recentTemplates } = useRecentTemplates(
         boardId, groupId, user.id, settings.recentWeeksLookback
     );
+
+    // Derive presales opportunities with >= 8h remaining from recent templates.
+    // Groups presales entries by comment (opportunity number), sums their hours,
+    // and keeps only those that still have capacity (total logged < 24h).
+    const presalesOpportunities = useMemo(() => {
+        const PRESALES_LIMIT = 24;
+        const oppMap = new Map<string, number>();
+        recentTemplates
+            .filter((t) => t.activityTypeName === 'presales' && t.comment)
+            .forEach((t) => {
+                oppMap.set(t.comment, (oppMap.get(t.comment) || 0) + t.hours);
+            });
+        return Array.from(oppMap.entries())
+            .filter(([, logged]) => PRESALES_LIMIT - logged >= 8)
+            .map(([opp, logged]) => ({
+                opportunity: opp,
+                hoursLogged: logged,
+                hoursRemaining: PRESALES_LIMIT - logged,
+            }))
+            .sort((a, b) => b.hoursRemaining - a.hoursRemaining);
+    }, [recentTemplates]);
+
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
-    const [editEntry, setEditEntry] = useState<any>(null);
+    const [editEntry, setEditEntry] = useState<{ id: string; date: string; activityType: string; customer: string; workItem: string; hours: number; comment: string } | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
     const claimsByDate = useMemo(() => {
@@ -111,7 +120,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         setTimeout(() => refresh(), 600);
     }, [refresh]);
 
-    const { values, setField, saving, error: formError, submit, handleDelete, reset } = useEntryForm(
+    const { values, setField, saving, error: formError, clearError: clearFormError, submit, handleDelete, reset } = useEntryForm(
         boardId,
         groupId,
         user.id,
@@ -209,9 +218,15 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         <Button
                             renderIcon={Add}
                             onClick={() => {
+                                // Pre-select today if it is visible in the current view,
+                                // otherwise fall back to the first visible day.
+                                const todayStr = formatDate(new Date());
+                                const defaultDate = visibleDates.some((d) => formatDate(d) === todayStr)
+                                    ? todayStr
+                                    : formatDate(visibleDates[0] ?? new Date());
                                 setFormMode('add');
                                 setEditEntry(null);
-                                setSelectedDate(formatDate(new Date()));
+                                setSelectedDate(defaultDate);
                             }}
                         >
                             {t('app.add')}
@@ -222,21 +237,21 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                             kind="ghost"
                             onClick={() => setMonthView((v) => !v)}
                         >
-                            {monthView ? 'Week view' : 'Month view'}
+                            {monthView ? t('week.weekView') : t('week.monthView')}
                         </Button>
                         <Button
                             kind="ghost"
                             renderIcon={viewMode === 'grid' ? List : Grid}
                             onClick={() => setViewMode((v) => (v === 'grid' ? 'list' : 'grid'))}
                         >
-                            {viewMode === 'grid' ? 'List view' : 'Grid view'}
+                            {viewMode === 'grid' ? t('week.listView') : t('week.gridView')}
                         </Button>
                         <Button
                             kind="ghost"
                             renderIcon={showWeekends ? ViewOff : View}
                             onClick={() => setShowWeekends((v) => !v)}
                         >
-                            {showWeekends ? 'Hide weekends' : 'Show weekends'}
+                            {showWeekends ? t('week.hideWeekends') : t('week.showWeekends')}
                         </Button>
                     </div>
                 </div>
@@ -291,6 +306,14 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                             key={dateStr}
                             className={`week-day-tile ${isToday ? 'week-day-tile--today' : ''} ${monthView ? 'week-day-tile--compact' : ''} ${monthView && selectedDayDetail === dateStr ? 'week-day-tile--selected' : ''}`}
                             onClick={monthView ? () => setSelectedDayDetail(dateStr) : undefined}
+                            role={monthView ? 'button' : undefined}
+                            tabIndex={monthView ? 0 : undefined}
+                            onKeyDown={monthView ? (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setSelectedDayDetail(dateStr);
+                                }
+                            } : undefined}
                         >
                             <div className="week-day-header">
                                 <span className="week-day-label">{t(`week.${getDayLabel(date)}`)}</span>
@@ -382,7 +405,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                 <Tile className="month-detail-panel">
                     <div className="month-detail-header">
                         <h4>{new Date(selectedDayDetail + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h4>
-                        <Button kind="ghost" size="sm" onClick={() => setSelectedDayDetail(null)}>Close</Button>
+                        <Button kind="ghost" size="sm" onClick={() => setSelectedDayDetail(null)}>{t('week.close')}</Button>
                     </div>
                     {(claimsByDate[selectedDayDetail] || []).map((claim) => (
                         <div key={claim.id} className="week-entry month-detail-entry">
@@ -414,8 +437,10 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         values={values}
                         setField={setField}
                         recentTemplates={recentTemplates}
+                        presalesOpportunities={presalesOpportunities}
                         saving={saving}
                         error={formError}
+                        onClearError={clearFormError}
                         onSubmit={submit}
                         onClose={() => {
                             setFormMode(null);

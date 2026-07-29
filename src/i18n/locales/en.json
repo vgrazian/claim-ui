@@ -35,7 +35,14 @@
         "saturday": "Sat",
         "sunday": "Sun",
         "noEntries": "No entries for this day",
-        "totalHours": "Total Hours"
+        "totalHours": "Total Hours",
+        "weekView": "Week view",
+        "monthView": "Month view",
+        "listView": "List view",
+        "gridView": "Grid view",
+        "hideWeekends": "Hide weekends",
+        "showWeekends": "Show weekends",
+        "close": "Close"
     },
     "entry": {
         "addTitle": "Add Entry",
@@ -49,6 +56,7 @@
         "hours": "Hours",
         "comment": "Comment",
         "quickSelect": "Quick Select",
+        "presalesAvailable": "Available opportunities",
         "activityTypes": {
             "billable": "Billable",
             "vacation": "Vacation",
@@ -81,7 +89,12 @@
         "opportunity": "Opportunity",
         "totalHours": "Total Hours",
         "limit": "Limit: {{limit}}h",
-        "noData": "No presales data"
+        "noData": "No presales data",
+        "datesAndHours": "Dates & Hours",
+        "noMatch": "No opportunities match the filter.",
+        "searchPlaceholder": "Search opportunity...",
+        "under24Label": "Under 24h",
+        "allLabel": "All"
     },
     "summary": {
         "title": "Summary",
@@ -99,6 +112,33 @@
         "boardId": "Board ID",
         "theme": "Theme",
         "light": "Light",
-        "dark": "Dark"
+        "dark": "Dark",
+        "user": "User",
+        "userHint": "User info retrieved from Monday.com API.",
+        "userName": "Name",
+        "userEmail": "Email",
+        "weekendDefault": "Weekend Display Default",
+        "weekendDefaultHint": "When enabled, Saturday and Sunday are shown by default in the week view.",
+        "weekendsHidden": "Weekends hidden by default",
+        "weekendsShown": "Weekends shown by default",
+        "quickFillLookback": "Quick-Fill Lookback",
+        "quickFillLookbackHint": "Number of past weeks to scan for recent entries shown as one-click templates in Add Entry.",
+        "weeksLookback": "Weeks to look back",
+        "installApp": "Install as Desktop App",
+        "installAppReady": "Click the button below to install Claim UI as a desktop app.",
+        "installAppManual": "To install: in Chrome/Edge open the address bar menu and choose \"Install Claim UI\". On macOS Safari use Share → \"Add to Dock\".",
+        "installAppButton": "Add to Dock / Desktop",
+        "setApiKey": "Set / Update API Key",
+        "apiKeyPlaceholder": "Enter new API key...",
+        "apiKeySaved": "API key saved",
+        "apiKeySavedHint": "Your API key has been validated and saved.",
+        "apiKeyError": "Error",
+        "validating": "Validating...",
+        "saveKey": "Save Key",
+        "clearMarks": "Clear {{count}}",
+        "report": {
+            "weekView": "Week view",
+            "monthView": "Month view"
+        }
     }
 }

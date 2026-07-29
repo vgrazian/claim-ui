@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Tile,
@@ -11,6 +11,16 @@ import {
     NumberInput,
 } from '@carbon/react';
 import { useSettings } from '../context/SettingsContext';
+
+// Capture the browser's beforeinstallprompt event so we can replay it on demand.
+// The event fires once on page load; we must store it before it is consumed.
+let deferredInstallPrompt: Event & { prompt?: () => void } | null = null;
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e as Event & { prompt?: () => void };
+    });
+}
 
 export default function SettingsView() {
     const { t } = useTranslation();
@@ -26,6 +36,18 @@ export default function SettingsView() {
     const [savingKey, setSavingKey] = useState(false);
     const [keyError, setKeyError] = useState<string | null>(null);
     const [keySuccess, setKeySuccess] = useState(false);
+    const [installPromptAvailable, setInstallPromptAvailable] = useState(!!deferredInstallPrompt);
+
+    // Track when the deferred prompt becomes available after component mounts
+    useEffect(() => {
+        const handler = (e: Event) => {
+            e.preventDefault();
+            deferredInstallPrompt = e as Event & { prompt?: () => void };
+            setInstallPromptAvailable(true);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
 
     const languageItems = [
         { id: 'en', text: 'English' },
@@ -91,8 +113,8 @@ export default function SettingsView() {
                     {keySuccess && (
                         <InlineNotification
                             kind="success"
-                            title="API key saved"
-                            subtitle="Your API key has been validated and saved."
+                            title={t('settings.apiKeySaved')}
+                            subtitle={t('settings.apiKeySavedHint')}
                             lowContrast
                             onClose={() => setKeySuccess(false)}
                         />
@@ -100,7 +122,7 @@ export default function SettingsView() {
                     {keyError && (
                         <InlineNotification
                             kind="error"
-                            title="Error"
+                            title={t('settings.apiKeyError')}
                             subtitle={keyError}
                             lowContrast
                             onClose={() => setKeyError(null)}
@@ -110,8 +132,8 @@ export default function SettingsView() {
                     <div className="settings-key-form">
                         <TextInput
                             id="settings-api-key"
-                            labelText="Set / Update API Key"
-                            placeholder="Enter new API key..."
+                            labelText={t('settings.setApiKey')}
+                            placeholder={t('settings.apiKeyPlaceholder')}
                             value={apiKeyInput}
                             onChange={(e) => setApiKeyInput(e.target.value)}
                             type="password"
@@ -123,19 +145,19 @@ export default function SettingsView() {
                             onClick={handleSaveKey}
                             disabled={savingKey || !apiKeyInput.trim()}
                         >
-                            {savingKey ? 'Validating...' : 'Save Key'}
+                            {savingKey ? t('settings.validating') : t('settings.saveKey')}
                         </Button>
                     </div>
                 </Tile>
 
                 <Tile className="settings-tile">
-                    <h3>User</h3>
+                    <h3>{t('settings.user')}</h3>
                     <p className="settings-hint">
-                        User info retrieved from Monday.com API.
+                        {t('settings.userHint')}
                     </p>
                     <TextInput
                         id="settings-username"
-                        labelText="Name"
+                        labelText={t('settings.userName')}
                         value={settings.userNameOverride || apiUserName || ''}
                         onChange={(e) => {
                             const val = e.target.value || null;
@@ -149,7 +171,7 @@ export default function SettingsView() {
                     />
                     <TextInput
                         id="settings-email"
-                        labelText="Email"
+                        labelText={t('settings.userEmail')}
                         value={apiUserEmail || ''}
                         readOnly
                         className="mt-2"
@@ -170,15 +192,14 @@ export default function SettingsView() {
                 </Tile>
 
                 <Tile className="settings-tile">
-                    <h3>Weekend Display Default</h3>
+                    <h3>{t('settings.weekendDefault')}</h3>
                     <p className="settings-hint">
-                        When enabled, Saturday and Sunday are shown by default in the week view.
-                        You can still toggle them on/off in the week view header.
+                        {t('settings.weekendDefaultHint')}
                     </p>
                     <Toggle
                         id="settings-weekends"
-                        labelA="Weekends hidden by default"
-                        labelB="Weekends shown by default"
+                        labelA={t('settings.weekendsHidden')}
+                        labelB={t('settings.weekendsShown')}
                         toggled={settings.showWeekendsDefault}
                         onToggle={(checked) => {
                             updateSettings({ showWeekendsDefault: checked });
@@ -187,14 +208,13 @@ export default function SettingsView() {
                 </Tile>
 
                 <Tile className="settings-tile">
-                    <h3>Quick-Fill Lookback</h3>
+                    <h3>{t('settings.quickFillLookback')}</h3>
                     <p className="settings-hint">
-                        Number of past weeks to scan for recent entries. These appear as
-                        one-click templates in the Add Entry form.
+                        {t('settings.quickFillLookbackHint')}
                     </p>
                     <NumberInput
                         id="settings-lookback"
-                        label="Weeks to look back"
+                        label={t('settings.weeksLookback')}
                         value={settings.recentWeeksLookback}
                         min={1}
                         max={52}
@@ -206,22 +226,31 @@ export default function SettingsView() {
                 </Tile>
 
                 <Tile className="settings-tile">
-                    <h3>Install as Desktop App</h3>
-                    <p className="settings-hint">
-                        On macOS: in Chrome/Safari, click the address bar → "Install Claim UI".
-                        On Windows/Linux: use Chrome menu → "Install Claim UI".
-                    </p>
-                    <Button
-                        kind="tertiary"
-                        size="sm"
-                        onClick={() => {
-                            // Trigger PWA install prompt
-                            const ev = new Event('beforeinstallprompt');
-                            window.dispatchEvent(ev);
-                        }}
-                    >
-                        Add to Dock / Desktop
-                    </Button>
+                    <h3>{t('settings.installApp')}</h3>
+                    {installPromptAvailable ? (
+                        <>
+                            <p className="settings-hint">
+                                {t('settings.installAppReady')}
+                            </p>
+                            <Button
+                                kind="tertiary"
+                                size="sm"
+                                onClick={() => {
+                                    if (deferredInstallPrompt?.prompt) {
+                                        deferredInstallPrompt.prompt();
+                                        deferredInstallPrompt = null;
+                                        setInstallPromptAvailable(false);
+                                    }
+                                }}
+                            >
+                                {t('settings.installAppButton')}
+                            </Button>
+                        </>
+                    ) : (
+                        <p className="settings-hint">
+                            {t('settings.installAppManual')}
+                        </p>
+                    )}
                 </Tile>
             </div>
         </div>

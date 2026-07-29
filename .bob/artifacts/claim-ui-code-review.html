@@ -1,0 +1,278 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Claim UI — Code Review</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.6; background: #ffffff; color: #1f2328; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .subtitle { color: #57606a; font-size: 0.85rem; margin-bottom: 2rem; }
+  h2 { font-size: 1rem; font-weight: 700; margin: 2rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 1px solid #e5e7eb; }
+  .finding { background: #f7f8fa; border: 1px solid #e5e7eb; border-left: 3px solid #3b82d4; border-radius: 4px; padding: 0.9rem 1rem; margin-bottom: 0.75rem; }
+  .finding--warn { border-left-color: #d97706; }
+  .finding--fix  { border-left-color: #dc2626; }
+  .finding--good { border-left-color: #16a34a; }
+  .finding-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 0.25rem; }
+  .finding-loc  { font-family: "SF Mono", Consolas, monospace; font-size: 0.78rem; color: #57606a; margin-bottom: 0.35rem; }
+  .finding-body { font-size: 0.85rem; color: #1f2328; }
+  .finding-body p { margin-top: 0.4rem; }
+  code { font-family: "SF Mono", Consolas, monospace; font-size: 0.82em; background: #eef0f3; padding: 0.1em 0.3em; border-radius: 3px; }
+  pre { background: #eef0f3; border: 1px solid #e5e7eb; border-radius: 4px; padding: 0.7rem 0.9rem; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; line-height: 1.5; }
+  .pill { display: inline-block; font-size: 0.72rem; font-weight: 600; border-radius: 3px; padding: 0.1em 0.45em; margin-right: 0.3rem; vertical-align: middle; }
+  .pill--fix  { background: #fee2e2; color: #991b1b; }
+  .pill--warn { background: #fef3c7; color: #92400e; }
+  .pill--good { background: #dcfce7; color: #166534; }
+  .pill--info { background: #dbeafe; color: #1e40af; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin-top: 0.75rem; }
+  th { background: #f7f8fa; text-align: left; padding: 0.4rem 0.6rem; border: 1px solid #e5e7eb; font-weight: 600; }
+  td { padding: 0.4rem 0.6rem; border: 1px solid #e5e7eb; vertical-align: top; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: center; font-size: 0.75rem; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Claim UI — Code Review</h1>
+  <p class="subtitle">React 18 + Express + Carbon Design System  ·  Monday.com claim management</p>
+
+  
+  <h2>Summary</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Severity</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>Security</td><td><span class="pill pill--fix">BUG/SEC</span></td><td>2</td></tr>
+      <tr><td>Correctness / Bugs</td><td><span class="pill pill--fix">BUG</span></td><td>4</td></tr>
+      <tr><td>Code Quality / Architecture</td><td><span class="pill pill--warn">WARN</span></td><td>6</td></tr>
+      <tr><td>UX / Accessibility</td><td><span class="pill pill--warn">WARN</span></td><td>4</td></tr>
+      <tr><td>Strengths (nothing to change)</td><td><span class="pill pill--good">GOOD</span></td><td>6</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Security</h2>
+
+  <div class="finding finding--fix">
+    <div class="finding-title"><span class="pill pill--fix">BUG/SEC</span> Express bound to all interfaces (0.0.0.0)</div>
+    <div class="finding-loc">server/index.mjs · line 466</div>
+    <div class="finding-body">
+      <p><code>app.listen(PORT, ...)</code> without a host argument binds to <code>0.0.0.0</code>, exposing the local server (and the Monday.com API key proxy) to every device on the same network.</p>
+      <p>Fix: bind explicitly to loopback.</p>
+      <pre>app.listen(PORT, '127.0.0.1', () =&gt; { ... });</pre>
+    </div>
+  </div>
+
+  <div class="finding finding--fix">
+    <div class="finding-title"><span class="pill pill--fix">BUG/SEC</span> CORS wildcard — no origin restriction</div>
+    <div class="finding-loc">server/index.mjs · line 111</div>
+    <div class="finding-body">
+      <p><code>app.use(cors())</code> allows any origin to call your local Monday.com proxy with no restrictions. Combined with the missing host binding above, any page on the LAN can exfiltrate the API key via the <code>/api/config</code> endpoint.</p>
+      <p>Fix: restrict CORS to <code>localhost</code> origins only in production.</p>
+      <pre>const isProd = !process.env.DEV;
+app.use(cors({
+  origin: isProd ? ['http://localhost:3001'] : true,
+}));</pre>
+    </div>
+  </div>
+
+  
+  <h2>Correctness / Bugs</h2>
+
+  <div class="finding finding--fix">
+    <div class="finding-title"><span class="pill pill--fix">BUG</span> ACTIVITY_TYPES duplicated between server and client — will diverge</div>
+    <div class="finding-loc">server/index.mjs · lines 31–46  |  src/services/claims.ts · lines 1–16</div>
+    <div class="finding-body">
+      <p>The same 14-entry enum is copy-pasted in two places. If one is updated the other silently lags behind, producing wrong activity names in the quick-fill template endpoint.</p>
+      <p>Fix: move the constant to a shared module (e.g. <code>shared/activityTypes.mjs</code>) imported by both. Alternatively expose a <code>/api/activity-types</code> endpoint from the server and consume it on the client.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--fix">
+    <div class="finding-title"><span class="pill pill--fix">BUG</span> <code>useEntryForm</code> initial state is stale after <code>editEntry</code> changes</div>
+    <div class="finding-loc">src/hooks/useEntryForm.ts · lines 31–35</div>
+    <div class="finding-body">
+      <p>The form values are initialised from <code>editEntry</code> once (via the <code>useState</code> lazy initialiser) and never re-synchronised when <code>editEntry</code> changes. If the user edits entry A, closes the modal, then immediately edits entry B, the form still shows entry A's data.</p>
+      <p>Fix: use a <code>useEffect</code> (or <code>useLayoutEffect</code>) that resets values when <code>editEntry</code> changes:</p>
+      <pre>useEffect(() =&gt; {
+  if (editEntry) setValues(editEntry);
+}, [editEntry?.id]);</pre>
+    </div>
+  </div>
+
+  <div class="finding finding--fix">
+    <div class="finding-title"><span class="pill pill--fix">BUG</span> <code>useMonthlyL104</code> silently swallows errors; loading state is never exposed</div>
+    <div class="finding-loc">src/hooks/useData.ts · lines 104–141</div>
+    <div class="finding-body">
+      <p>The catch handler is an empty lambda <code>.catch(() =&gt; {})</code>. A network failure leaves the monthly totals at zero with no indication to the user. The hook also has no <code>loading</code> state, so the summary bar renders <code>0h</code> while the data is in flight.</p>
+      <p>Fix: add minimal error and loading states, or at minimum log the error.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--fix">
+    <div class="finding-title"><span class="pill pill--fix">BUG</span> GraphQL query-params injection via string interpolation</div>
+    <div class="finding-loc">server/index.mjs · lines 248–257 and 373</div>
+    <div class="finding-body">
+      <p>User-controlled values (<code>userId</code>, <code>dateFilter</code>) are interpolated directly into the GraphQL query string:</p>
+      <pre>ruleParts.push(`{ column_id: "person", compare_value: ["person-${userId}"], ...}`);</pre>
+      <p>A crafted <code>userId</code> value could close the literal and inject arbitrary GraphQL. The Monday.com API validates queries server-side, but defence-in-depth requires server-side validation of the inputs before interpolation.</p>
+      <p>Fix: validate <code>userId</code> is an integer and <code>dateFilter</code> entries match <code>/^\d{4}-\d{2}-\d{2}$/</code> before constructing the query string.</p>
+      <pre>if (!Number.isInteger(Number(userId))) throw new Error('Invalid userId');
+dateFilter.forEach(d =&gt; {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new Error('Invalid date');
+});</pre>
+    </div>
+  </div>
+
+  
+  <h2>Code Quality / Architecture</h2>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> Month-dates calculation is duplicated verbatim in two views</div>
+    <div class="finding-loc">src/pages/WeekView.tsx · lines 60–73  |  src/pages/ReportView.tsx · lines 48–60</div>
+    <div class="finding-body">
+      <p>Both views contain identical logic to compute the calendar-grid dates for a month. Extract this to <code>getMonthGridDates(date: Date): Date[]</code> in <code>src/services/claims.ts</code> and import it in both places.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> <code>any</code> type on <code>editEntry</code> in <code>WeekView</code></div>
+    <div class="finding-loc">src/pages/WeekView.tsx · line 86</div>
+    <div class="finding-body">
+      <p><code>const [editEntry, setEditEntry] = useState&lt;any&gt;(null)</code> bypasses all type-checking for the form entry. The shape is already well-defined in <code>useEntryForm.ts</code> — use that type directly:</p>
+      <pre>import type { FormValues } from '../hooks/useEntryForm';
+const [editEntry, setEditEntry] = useState&lt;({ id: string } &amp; FormValues) | null&gt;(null);</pre>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> Hardcoded board ID appears in three places</div>
+    <div class="finding-loc">server/index.mjs · line 29  |  src/context/SettingsContext.tsx · line 30  |  README.md</div>
+    <div class="finding-body">
+      <p><code>'6500270039'</code> is the default board ID. It is currently defined independently in the server and in the client-side default settings. A single authoritative source (served from <code>/api/config</code> or a shared constant) prevents the two from drifting.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> <code>e: any</code> in catch blocks throughout hooks and views</div>
+    <div class="finding-loc">src/hooks/useData.ts · lines 64, 163  |  src/hooks/useEntryForm.ts · lines 79, 91</div>
+    <div class="finding-body">
+      <p>Typing caught errors as <code>any</code> is a common TypeScript anti-pattern and may hide real typing issues. Use the narrower pattern instead:</p>
+      <pre>} catch (e) {
+  const msg = e instanceof Error ? e.message : String(e);
+  setError(msg);
+}</pre>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> <code>ReportView</code> re-implements its own data-fetching instead of using <code>useClaims</code></div>
+    <div class="finding-loc">src/pages/ReportView.tsx · lines 63–85</div>
+    <div class="finding-body">
+      <p><code>ReportView</code> duplicates the query + parse + error-state logic that <code>useClaims</code> already encapsulates. Using the existing hook would halve the data-layer code in this file, and the <code>queryDates</code> / month-view logic would consolidate with the WeekView refactor above.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> <code>setTimeout(() =&gt; refresh(), 600)</code> is a fragile workaround</div>
+    <div class="finding-loc">src/pages/WeekView.tsx · line 111</div>
+    <div class="finding-body">
+      <p>The 600ms delay is inserted to give Monday.com time to index new items before re-querying. This is not reliable on slow connections and will feel laggy on fast ones. A better approach is optimistic UI (add the item to local state immediately from the form values) with a background refresh to reconcile.</p>
+    </div>
+  </div>
+
+  
+  <h2>UX / Accessibility</h2>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> Several strings are hard-coded English, bypassing i18n</div>
+    <div class="finding-loc">src/pages/WeekView.tsx · lines 225, 232, 237  |  src/pages/PresalesView.tsx · lines 165–166  |  src/pages/SettingsView.tsx · many</div>
+    <div class="finding-body">
+      <p>Strings like <code>"Week view"</code>, <code>"Month view"</code>, <code>"Hide weekends"</code>, <code>"No opportunities match the filter"</code>, and most of <code>SettingsView</code> are plain English literals rather than <code>t('...')</code> calls. This breaks the Italian translation for any user who has selected <code>it</code>.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> Month-view detail panel is keyboard-inaccessible</div>
+    <div class="finding-loc">src/pages/WeekView.tsx · line 292–294</div>
+    <div class="finding-body">
+      <p>Day tiles in month view open the detail panel via an <code>onClick</code> on a <code>&lt;Tile&gt;</code>, which renders as a <code>&lt;div&gt;</code>. There is no <code>role="button"</code>, no <code>tabIndex</code>, and no <code>onKeyDown</code> handler, making this feature unreachable by keyboard users.</p>
+      <pre>// Add to the month-view Tile:
+role="button"
+tabIndex={0}
+onKeyDown={(e) =&gt; { if (e.key === 'Enter' || e.key === ' ') setSelectedDayDetail(dateStr); }}</pre>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> PWA install button dispatches a non-standard synthetic event</div>
+    <div class="finding-loc">src/pages/SettingsView.tsx · lines 217–220</div>
+    <div class="finding-body">
+      <p>The "Add to Dock" button fires <code>new Event('beforeinstallprompt')</code> — this has no effect. The browser-controlled prompt must be captured and deferred in a <code>window.addEventListener('beforeinstallprompt', ...)</code> handler and then called via <code>prompt()</code>. Without this the button silently does nothing.</p>
+    </div>
+  </div>
+
+  <div class="finding finding--warn">
+    <div class="finding-title"><span class="pill pill--warn">WARN</span> <code>InlineNotification</code> error in <code>EntryFormModal</code> has a no-op <code>onClose</code></div>
+    <div class="finding-loc">src/components/EntryFormModal.tsx · line 89</div>
+    <div class="finding-body">
+      <p><code>onClose={() =&gt; {}}</code> — the user can click the X on the notification but nothing happens; the error stays visible. The parent provides the error state so the close handler needs to clear it via a new <code>onClearError</code> prop (or expose <code>setError</code> from the hook).</p>
+    </div>
+  </div>
+
+  
+  <h2>Strengths</h2>
+
+  <div class="finding finding--good">
+    <div class="finding-title"><span class="pill pill--good">GOOD</span> Clean separation: Express proxy keeps the API key server-side</div>
+    <div class="finding-body"><p>The Monday.com API key never touches the browser bundle. All mutations go through the Express layer. This is the right architecture for a local desktop tool of this kind.</p></div>
+  </div>
+
+  <div class="finding finding--good">
+    <div class="finding-title"><span class="pill pill--good">GOOD</span> Solid test coverage for the service layer</div>
+    <div class="finding-body"><p>43 tests across all public functions in <code>claims.ts</code> and the full <code>api.ts</code> surface. Edge cases (missing columns, no date, unknown activity value) are explicitly covered.</p></div>
+  </div>
+
+  <div class="finding finding--good">
+    <div class="finding-title"><span class="pill pill--good">GOOD</span> Hooks are well-factored and reusable</div>
+    <div class="finding-body"><p><code>useWeekNavigation</code>, <code>useClaims</code>, <code>useEntryForm</code>, and <code>useRecentTemplates</code> are each focused on one concern and composable. The pattern is consistent and easy to extend.</p></div>
+  </div>
+
+  <div class="finding finding--good">
+    <div class="finding-title"><span class="pill pill--good">GOOD</span> Cross-platform config path handling</div>
+    <div class="finding-body"><p>macOS / Linux / Windows paths are derived at startup from <code>os.platform()</code> with a sensible fallback. The config is shared with the TUI without coupling the two processes at runtime.</p></div>
+  </div>
+
+  <div class="finding finding--good">
+    <div class="finding-title"><span class="pill pill--good">GOOD</span> API key validation before saving</div>
+    <div class="finding-body"><p>The <code>POST /api/config</code> endpoint calls Monday.com with the new key before persisting it. This prevents saving obviously wrong keys.</p></div>
+  </div>
+
+  <div class="finding finding--good">
+    <div class="finding-title"><span class="pill pill--good">GOOD</span> Keyboard shortcuts with correct input guard</div>
+    <div class="finding-body"><p>The <code>keydown</code> handler in <code>WeekView</code> correctly short-circuits when the active element is an input or textarea, preventing navigation shortcuts from firing while typing.</p></div>
+  </div>
+
+  
+  <h2>Recommended Priority Order</h2>
+  <table>
+    <thead><tr><th>#</th><th>Finding</th><th>Effort</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Bind Express to 127.0.0.1</td><td>1 line</td></tr>
+      <tr><td>2</td><td>Restrict CORS to localhost origins</td><td>5 lines</td></tr>
+      <tr><td>3</td><td>Validate userId / dateFilter before GraphQL interpolation</td><td>10 lines</td></tr>
+      <tr><td>4</td><td>Fix stale editEntry in useEntryForm</td><td>5 lines</td></tr>
+      <tr><td>5</td><td>Fix broken PWA install button</td><td>20 lines</td></tr>
+      <tr><td>6</td><td>Fix no-op InlineNotification onClose</td><td>5 lines</td></tr>
+      <tr><td>7</td><td>Extract shared month-dates helper</td><td>15 lines</td></tr>
+      <tr><td>8</td><td>Move ACTIVITY_TYPES to shared module</td><td>30 min refactor</td></tr>
+      <tr><td>9</td><td>Wire remaining strings through i18n</td><td>1–2 h</td></tr>
+      <tr><td>10</td><td>Add keyboard accessibility to month-view tiles</td><td>10 lines</td></tr>
+    </tbody>
+  </table>
+
+</div>
+<footer>
+  <p>Made with IBM Bob</p>
+</footer>
+</body>
+</html>

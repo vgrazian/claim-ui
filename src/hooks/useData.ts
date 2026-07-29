@@ -61,8 +61,8 @@ export function useClaims(
 
             setClaims(entries);
             setError(null);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
         } finally {
             setLoading(false);
         }
@@ -135,7 +135,9 @@ export function useMonthlyL104(boardId: string, groupId: string, userId: number 
                 setL104Total(l104);
                 setVacationTotal(vacation);
             })
-            .catch(() => { });
+            .catch((e) => {
+                console.error('useMonthlyL104: failed to load monthly totals', e instanceof Error ? e.message : e);
+            });
     }, [boardId, groupId, userId]);
 
     return { l104Total, vacationTotal, l104Max: L104_MAX };
@@ -160,8 +162,8 @@ export function useRecentTemplates(
             const data = await fetchRecentTemplates(boardId, groupId, userId, days);
             setTemplates(data);
             setError(null);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
         } finally {
             setLoading(false);
         }

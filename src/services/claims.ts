@@ -1,28 +1,16 @@
-export const ACTIVITY_TYPES: Record<string, number> = {
-    vacation: 0,
-    billable: 1,
-    holding: 2,
-    education: 3,
-    work_reduction: 4,
-    tbd: 5,
-    holiday: 6,
-    presales: 7,
-    illness: 8,
-    paid_not_worked: 9,
-    intellectual_capital: 10,
-    business_development: 11,
-    overhead: 12,
-    l104: 13,
-};
+// Re-export the canonical activity type definitions from the shared module.
+// The server imports the same file, keeping both in sync automatically.
+export { ACTIVITY_TYPES } from '../shared/activityTypes.mjs';
+import { ACTIVITY_TYPES as _AT } from '../shared/activityTypes.mjs';
 
-export const ACTIVITY_TYPE_KEYS = Object.keys(ACTIVITY_TYPES);
+export const ACTIVITY_TYPE_KEYS = Object.keys(_AT);
 
 export function getActivityValue(name: string): number {
-    return ACTIVITY_TYPES[name] ?? 0;
+    return (_AT as Record<string, number>)[name] ?? 0;
 }
 
 export function getActivityName(value: number): string {
-    for (const [key, val] of Object.entries(ACTIVITY_TYPES)) {
+    for (const [key, val] of Object.entries(_AT)) {
         if (val === value) return key;
     }
     return 'billable';
@@ -133,6 +121,24 @@ export function formatDate(date: Date): string {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+}
+
+/**
+ * Returns the calendar-grid dates for the month containing `date`.
+ * The grid starts on the Monday of the week that contains the 1st of the month,
+ * and ends on the last day of the month (not padded to a full week).
+ */
+export function getMonthGridDates(date: Date): Date[] {
+    const first = new Date(date.getFullYear(), date.getMonth(), 1);
+    const day = first.getDay();
+    const start = new Date(first);
+    start.setDate(first.getDate() - (day === 0 ? 6 : day - 1));
+    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    const dates: Date[] = [];
+    for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d));
+    }
+    return dates;
 }
 
 export function formatDisplayDate(dateStr: string): string {

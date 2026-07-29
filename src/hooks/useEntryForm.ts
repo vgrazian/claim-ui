@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { createItem, updateItem, deleteItem } from '../services/api';
 import { getActivityValue, formatDate } from '../services/claims';
 
@@ -36,6 +36,14 @@ export function useEntryForm(
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Re-sync form values when the entry being edited changes (e.g. user opens
+    // a different entry without closing and re-opening the modal).
+    useEffect(() => {
+        if (editEntry) {
+            setValues(editEntry);
+        }
+    }, [editEntry?.id]);
+
     const setField = useCallback((field: keyof FormValues, value: string | number) => {
         setValues((prev) => {
             const next = { ...prev, [field]: value };
@@ -48,6 +56,8 @@ export function useEntryForm(
             return next;
         });
     }, []);
+
+    const clearError = useCallback(() => setError(null), []);
 
     const reset = useCallback(() => {
         setValues(editEntry || defaultFormValues);
@@ -76,8 +86,8 @@ export function useEntryForm(
                 await createItem(boardId, groupId, itemName, columnValues);
             }
             onSuccess();
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
         } finally {
             setSaving(false);
         }
@@ -89,12 +99,12 @@ export function useEntryForm(
         try {
             await deleteItem(itemId);
             onSuccess();
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
         } finally {
             setSaving(false);
         }
     }, [onSuccess]);
 
-    return { values, setField, saving, error, submit, reset, handleDelete };
+    return { values, setField, saving, error, clearError, submit, reset, handleDelete };
 }

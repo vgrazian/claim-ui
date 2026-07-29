@@ -35,7 +35,14 @@
         "saturday": "Sab",
         "sunday": "Dom",
         "noEntries": "Nessuna voce per questo giorno",
-        "totalHours": "Ore Totali"
+        "totalHours": "Ore Totali",
+        "weekView": "Vista settimana",
+        "monthView": "Vista mese",
+        "listView": "Vista lista",
+        "gridView": "Vista griglia",
+        "hideWeekends": "Nascondi weekend",
+        "showWeekends": "Mostra weekend",
+        "close": "Chiudi"
     },
     "entry": {
         "addTitle": "Aggiungi Voce",
@@ -49,6 +56,7 @@
         "hours": "Ore",
         "comment": "Commento",
         "quickSelect": "Selezione Rapida",
+        "presalesAvailable": "Opportunità disponibili",
         "activityTypes": {
             "billable": "Fatturabile",
             "vacation": "Ferie",
@@ -81,7 +89,12 @@
         "opportunity": "Opportunità",
         "totalHours": "Ore Totali",
         "limit": "Limite: {{limit}}h",
-        "noData": "Nessun dato presales"
+        "noData": "Nessun dato presales",
+        "datesAndHours": "Date e Ore",
+        "noMatch": "Nessuna opportunità corrisponde al filtro.",
+        "searchPlaceholder": "Cerca opportunità...",
+        "under24Label": "Sotto le 24h",
+        "allLabel": "Tutte"
     },
     "summary": {
         "title": "Riepilogo",
@@ -99,6 +112,33 @@
         "boardId": "ID Board",
         "theme": "Tema",
         "light": "Chiaro",
-        "dark": "Scuro"
+        "dark": "Scuro",
+        "user": "Utente",
+        "userHint": "Informazioni utente recuperate dall'API Monday.com.",
+        "userName": "Nome",
+        "userEmail": "Email",
+        "weekendDefault": "Default Visualizzazione Weekend",
+        "weekendDefaultHint": "Se abilitato, sabato e domenica vengono mostrati di default nella vista settimana.",
+        "weekendsHidden": "Weekend nascosti di default",
+        "weekendsShown": "Weekend visibili di default",
+        "quickFillLookback": "Lookback Inserimento Rapido",
+        "quickFillLookbackHint": "Numero di settimane passate da scansionare per le voci recenti mostrate come template nell'aggiunta voci.",
+        "weeksLookback": "Settimane da analizzare",
+        "installApp": "Installa come App Desktop",
+        "installAppReady": "Clicca il pulsante per installare Claim UI come app desktop.",
+        "installAppManual": "Per installare: in Chrome/Edge apri il menu della barra degli indirizzi e scegli \"Installa Claim UI\". Su macOS Safari usa Condividi → \"Aggiungi al Dock\".",
+        "installAppButton": "Aggiungi al Dock / Desktop",
+        "setApiKey": "Imposta / Aggiorna Chiave API",
+        "apiKeyPlaceholder": "Inserisci la nuova chiave API...",
+        "apiKeySaved": "Chiave API salvata",
+        "apiKeySavedHint": "La tua chiave API è stata validata e salvata.",
+        "apiKeyError": "Errore",
+        "validating": "Validazione...",
+        "saveKey": "Salva Chiave",
+        "clearMarks": "Cancella {{count}}",
+        "report": {
+            "weekView": "Vista settimana",
+            "monthView": "Vista mese"
+        }
     }
 }

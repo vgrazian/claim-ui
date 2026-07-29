@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir, platform } from 'os';
 import express from 'express';
 import cors from 'cors';
+import { ACTIVITY_TYPES, getActivityName } from './src/shared/activityTypes.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,30 +28,6 @@ function getConfigPaths() {
 const CONFIG_PATHS = getConfigPaths();
 const MONDAY_API = 'https://api.monday.com/v2';
 const BOARD_ID = '6500270039';
-
-const ACTIVITY_TYPES = {
-    vacation: 0,
-    billable: 1,
-    holding: 2,
-    education: 3,
-    work_reduction: 4,
-    tbd: 5,
-    holiday: 6,
-    presales: 7,
-    illness: 8,
-    paid_not_worked: 9,
-    intellectual_capital: 10,
-    business_development: 11,
-    overhead: 12,
-    l104: 13,
-};
-
-function getActivityName(value) {
-    for (const [key, val] of Object.entries(ACTIVITY_TYPES)) {
-        if (val === value) return key;
-    }
-    return 'billable';
-}
 
 function findConfigPath() {
     for (const p of CONFIG_PATHS) {
@@ -108,7 +85,24 @@ async function proxyMonday(query, variables = {}) {
 }
 
 const app = express();
-app.use(cors());
+
+// Restrict CORS to localhost origins only — the API key proxy must never be
+// reachable from arbitrary origins on the network.
+const ALLOWED_ORIGINS = [
+    `http://localhost:${process.env.PORT || 3001}`,
+    'http://localhost:5173', // Vite dev server
+    'http://127.0.0.1:' + (process.env.PORT || 3001),
+    'http://127.0.0.1:5173',
+];
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. same-origin fetch, curl)
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            return callback(null, true);
+        }
+        callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
+}));
 app.use(express.json());
 
 // Health check
@@ -231,12 +225,31 @@ app.get('/api/board/:boardId', async (req, res) => {
     }
 });
 
+// Validate that a value is a safe integer (guards GraphQL string interpolation)
+function assertUserId(userId) {
+    const n = Number(userId);
+    if (!Number.isInteger(n) || n <= 0) {
+        throw new Error(`Invalid userId: ${userId}`);
+    }
+    return n;
+}
+
+// Validate that a value is a YYYY-MM-DD date string
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function assertDateString(d) {
+    if (typeof d !== 'string' || !DATE_RE.test(d)) {
+        throw new Error(`Invalid date value: ${d}`);
+    }
+    return d;
+}
+
 // Query items
 app.post('/api/items/query', async (req, res) => {
     try {
         const { boardId, groupId, userId, dateFilter, limit = 500 } = req.body;
 
-        // Build query_params as inline GraphQL (operators are enums, not strings)
+        // Build query_params as inline GraphQL (operators are enums, not strings).
+        // Values are validated before interpolation to prevent GraphQL injection.
         let queryParamsInline = '';
 
         if (userId || (dateFilter && dateFilter.length > 0)) {
@@ -244,13 +257,14 @@ app.post('/api/items/query', async (req, res) => {
 
             // User filter
             if (userId) {
-                ruleParts.push(`{ column_id: "person", compare_value: ["person-${userId}"], operator: any_of }`);
+                const safeUserId = assertUserId(userId);
+                ruleParts.push(`{ column_id: "person", compare_value: ["person-${safeUserId}"], operator: any_of }`);
             }
 
             // Date filter
             if (dateFilter && dateFilter.length > 0) {
                 const dateValues = [];
-                dateFilter.forEach((d) => dateValues.push(`"EXACT", "${d}"`));
+                dateFilter.forEach((d) => dateValues.push(`"EXACT", "${assertDateString(d)}"`));
                 ruleParts.push(`{ column_id: "date4", compare_value: [${dateValues.join(', ')}], operator: any_of }`);
             }
 
@@ -369,8 +383,11 @@ app.get('/api/items/recent', async (req, res) => {
             return res.status(400).json({ error: 'groupId and userId are required' });
         }
 
+        // Validate before interpolation into GraphQL string
+        const safeUserId = assertUserId(userId);
+
         // Fetch items filtered by user (person column), sorted most-recent first
-        const queryParamsInline = `query_params: { rules: [{ column_id: "person", compare_value: ["person-${userId}"], operator: any_of }], operator: and }`;
+        const queryParamsInline = `query_params: { rules: [{ column_id: "person", compare_value: ["person-${safeUserId}"], operator: any_of }], operator: and }`;
 
         const query = `
       query($boardId: [ID!], $groupId: [String!], $limit: Int!) {
@@ -463,8 +480,9 @@ app.get('*', (req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-    console.log(`Claim UI server running on http://localhost:${PORT}`);
+// Bind to loopback only — never expose the Monday.com proxy to the LAN.
+app.listen(PORT, '127.0.0.1', () => {
+    console.log(`Claim UI server running on http://127.0.0.1:${PORT}`);
     const apiKey = loadApiKey();
     console.log(`API key: ${apiKey ? 'loaded' : 'NOT FOUND'}`);
 });
