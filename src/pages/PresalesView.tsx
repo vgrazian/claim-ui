@@ -8,14 +8,11 @@ import {
     TextInput,
     Toggle,
 } from '@carbon/react';
-import { Copy } from '@carbon/icons-react';
+import { Copy, ArrowUp, ArrowDown, ArrowsVertical } from '@carbon/icons-react';
 import { MondayUser, queryItems, ClaimEntry } from '../services/api';
 import {
     itemToClaimEntry,
-    formatDate,
 } from '../services/claims';
-
-const PRESALES_OPPORTUNITY_HOURS_LIMIT = 40;
 
 interface Props {
     user: MondayUser;
@@ -33,7 +30,12 @@ interface OppRow {
     days: Map<string, number>;
     totalHours: number;
     entries: DayEntry[];
+    /** ISO date string of the most recent entry */
+    lastDate: string;
 }
+
+type SortKey = 'opportunity' | 'lastDate' | 'totalHours';
+type SortDir = 'desc' | 'asc';
 
 export default function PresalesView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
@@ -43,6 +45,9 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
     const [copiedOpp, setCopiedOpp] = useState<string | null>(null);
     const [searchText, setSearchText] = useState('');
     const [under24Only, setUnder24Only] = useState(false);
+    // Default: most recently used first (lastDate desc)
+    const [sortKey, setSortKey] = useState<SortKey>('lastDate');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
 
     const loadClaims = useCallback(async () => {
         setLoading(true);
@@ -57,8 +62,8 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
 
             setClaims(entries);
             setError(null);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
         } finally {
             setLoading(false);
         }
@@ -92,24 +97,52 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
             row.entries.push({ date: c.date, hours: c.hours });
         });
 
-        const rows = Array.from(map.values()).sort((a, b) => {
-            // Sort by most recent date used (descending)
-            const aMax = a.entries.reduce((max, e) => e.date > max ? e.date : max, '');
-            const bMax = b.entries.reduce((max, e) => e.date > max ? e.date : max, '');
-            return bMax.localeCompare(aMax);
-        });
+        // Attach the lastDate to each row for sorting
+        const rows = Array.from(map.values()).map((r) => ({
+            ...r,
+            lastDate: r.entries.reduce((max, e) => e.date > max ? e.date : max, ''),
+        }));
         const total = rows.reduce((s, r) => s + r.totalHours, 0);
 
         return { oppRows: rows, grandTotal: total };
     }, [claims]);
 
     const filteredRows = useMemo(() => {
-        return oppRows.filter((r) => {
+        const filtered = oppRows.filter((r) => {
             if (under24Only && r.totalHours >= 24) return false;
             if (searchText && !r.opportunity.toLowerCase().includes(searchText.toLowerCase())) return false;
             return true;
         });
-    }, [oppRows, searchText, under24Only]);
+
+        return [...filtered].sort((a, b) => {
+            let cmp = 0;
+            if (sortKey === 'opportunity') {
+                cmp = a.opportunity.localeCompare(b.opportunity);
+            } else if (sortKey === 'lastDate') {
+                cmp = a.lastDate.localeCompare(b.lastDate);
+            } else {
+                cmp = a.totalHours - b.totalHours;
+            }
+            return sortDir === 'desc' ? -cmp : cmp;
+        });
+    }, [oppRows, searchText, under24Only, sortKey, sortDir]);
+
+    /** Toggle sort: same column flips direction; new column starts desc */
+    const handleSort = (key: SortKey) => {
+        if (key === sortKey) {
+            setSortDir((d) => d === 'desc' ? 'asc' : 'desc');
+        } else {
+            setSortKey(key);
+            setSortDir('desc');
+        }
+    };
+
+    const SortIcon = ({ col }: { col: SortKey }) => {
+        if (col !== sortKey) return <ArrowsVertical size={14} className="presales-sort-icon presales-sort-icon--inactive" />;
+        return sortDir === 'desc'
+            ? <ArrowDown size={14} className="presales-sort-icon" />
+            : <ArrowUp size={14} className="presales-sort-icon" />;
+    };
 
     const copyOpp = async (opp: string) => {
         try {
@@ -161,9 +194,27 @@ export default function PresalesView({ user, boardId, groupId }: Props) {
                             <table className="presales-custom-table">
                                 <thead>
                                     <tr>
-                                        <th>{t('presales.opportunity')}</th>
-                                        <th>{t('presales.datesAndHours')}</th>
-                                        <th className="presales-total-col">{t('presales.totalHours')}</th>
+                                        <th
+                                            className="presales-th-sortable"
+                                            onClick={() => handleSort('opportunity')}
+                                            aria-sort={sortKey === 'opportunity' ? (sortDir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                                        >
+                                            {t('presales.opportunity')} <SortIcon col="opportunity" />
+                                        </th>
+                                        <th
+                                            className="presales-th-sortable"
+                                            onClick={() => handleSort('lastDate')}
+                                            aria-sort={sortKey === 'lastDate' ? (sortDir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                                        >
+                                            {t('presales.datesAndHours')} <SortIcon col="lastDate" />
+                                        </th>
+                                        <th
+                                            className={`presales-total-col presales-th-sortable`}
+                                            onClick={() => handleSort('totalHours')}
+                                            aria-sort={sortKey === 'totalHours' ? (sortDir === 'desc' ? 'descending' : 'ascending') : 'none'}
+                                        >
+                                            {t('presales.totalHours')} <SortIcon col="totalHours" />
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>

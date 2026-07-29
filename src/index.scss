@@ -537,6 +537,32 @@
         background: #f4f4f4;
     }
 
+    .presales-th-sortable {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+
+        &:hover {
+            background: #e8e8e8;
+            color: #161616;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #0f62fe;
+            outline-offset: -2px;
+        }
+    }
+
+    .presales-sort-icon {
+        vertical-align: middle;
+        margin-left: 0.25rem;
+        color: #0f62fe;
+    }
+
+    .presales-sort-icon--inactive {
+        color: #a8a8a8;
+    }
+
     tbody tr:hover {
         background-color: #f7f9fc;
     }
