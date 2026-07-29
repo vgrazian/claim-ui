@@ -81,13 +81,13 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                 oppMap.set(t.comment, (oppMap.get(t.comment) || 0) + t.hours);
             });
         return Array.from(oppMap.entries())
-            .filter(([, logged]) => PRESALES_LIMIT - logged >= 8)
+            .filter(([, logged]) => logged < PRESALES_LIMIT)
             .map(([opp, logged]) => ({
                 opportunity: opp,
                 hoursLogged: logged,
                 hoursRemaining: PRESALES_LIMIT - logged,
             }))
-            .sort((a, b) => b.hoursRemaining - a.hoursRemaining);
+            .sort((a, b) => a.hoursRemaining - b.hoursRemaining);
     }, [recentTemplates]);
 
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
