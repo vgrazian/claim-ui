@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir, platform } from 'os';
 import express from 'express';
 import cors from 'cors';
-import { ACTIVITY_TYPES, getActivityName } from './src/shared/activityTypes.mjs';
+import { ACTIVITY_TYPES, getActivityName } from '../src/shared/activityTypes.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -418,12 +418,18 @@ app.get('/api/items/recent', async (req, res) => {
         cutoff.setDate(cutoff.getDate() - days);
         const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-        // Filter client-side by date range and extract unique templates
-        // Skip personal/non-billable types — already quick-presets or noise
-        //   0=vacation, 4=work_reduction, 6=holiday, 7=presales, 8=illness, 13=l104
-        const SKIP_ACTIVITIES = new Set([0, 4, 6, 7, 8, 13]);
+        // Filter client-side by date range and extract unique templates.
+        //
+        // Skip non-billable types that are already covered by quick-presets or
+        // have no useful quick-fill data — EXCEPT presales (7), which is included
+        // so that opportunity numbers can be surfaced in the entry form.
+        //   0=vacation, 4=work_reduction, 6=holiday, 8=illness, 13=l104
+        const SKIP_ACTIVITIES = new Set([0, 4, 6, 8, 13]);
         const templates = [];
         const seen = new Set();
+        // Presales: track actual hours per opportunity so the client can compute
+        // remaining capacity. Keyed by comment (opportunity number).
+        const presalesHours = new Map();
 
         for (const item of items) {
             const dateCol = item.column_values?.find((c) => c.id === 'date4');
@@ -440,11 +446,42 @@ app.get('/api/items/recent', async (req, res) => {
 
             const customer = item.column_values?.find((c) => c.id === 'text__1')?.text || '';
             const workItem = item.column_values?.find((c) => c.id === 'text8__1')?.text || '';
-
-            // Skip entries with no useful identifiers
-            if (!customer && !workItem) continue;
-
             const comment = item.column_values?.find((c) => c.id === 'text2__1' || c.id === 'long_text')?.text || '';
+
+            const hoursCol = item.column_values?.find((c) => c.id === 'numbers__1');
+            let hours = 8;
+            try { hours = parseFloat(hoursCol?.value ? JSON.parse(hoursCol.value) : hoursCol?.text || '8') || 8; } catch { }
+
+            if (activityIdx === ACTIVITY_TYPES.presales) {
+                // For presales: dedupe by opportunity (comment) and accumulate real hours.
+                // This lets the client compute how many hours are left before the 24h cap.
+                if (!comment) continue; // no opportunity number — not useful
+                presalesHours.set(comment, (presalesHours.get(comment) || 0) + hours);
+                const key = `presales::${comment}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    templates.push({
+                        activityType: activityIdx,
+                        activityTypeName: 'presales',
+                        customer,
+                        workItem,
+                        hours,
+                        comment,
+                        lastUsed: dateStr,
+                    });
+                } else {
+                    // Update hours on the existing template entry to the running total
+                    const existing = templates.find((t) => t.activityTypeName === 'presales' && t.comment === comment);
+                    if (existing) {
+                        existing.hours = presalesHours.get(comment);
+                        if (dateStr > existing.lastUsed) existing.lastUsed = dateStr;
+                    }
+                }
+                continue;
+            }
+
+            // Non-presales: skip entries with no useful identifiers
+            if (!customer && !workItem) continue;
 
             // Dedupe by activity + customer + workItem (hours always default to 8)
             const key = `${activityIdx}::${customer}::${workItem}`;

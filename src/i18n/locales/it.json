@@ -139,6 +139,9 @@
         "report": {
             "weekView": "Vista settimana",
             "monthView": "Vista mese"
-        }
+        },
+        "about": "Info",
+        "version": "Versione",
+        "buildDate": "Data build"
     }
 }
