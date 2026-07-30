@@ -57,6 +57,8 @@
         "comment": "Comment",
         "quickSelect": "Quick Select",
         "presalesAvailable": "Available opportunities",
+        "presalesSelected": "Selected",
+        "presalesNoOpps": "No opportunities found in your recent entries. Type the opportunity number in the comment field above.",
         "activityTypes": {
             "billable": "Billable",
             "vacation": "Vacation",

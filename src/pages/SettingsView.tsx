@@ -256,7 +256,7 @@ export default function SettingsView() {
                 <Tile className="settings-tile">
                     <h3>{t('settings.about')}</h3>
                     <p className="settings-hint">{t('settings.version')}: <strong>v{__APP_VERSION__}</strong></p>
-                    <p className="settings-hint">{t('settings.buildDate')}: <strong>{__APP_BUILD_DATE__}</strong></p>
+                    <p className="settings-hint">{t('settings.buildDate')}: <strong>{__APP_BUILD_DATE__} {__APP_BUILD_TIME__}</strong></p>
                 </Tile>
             </div>
         </div>

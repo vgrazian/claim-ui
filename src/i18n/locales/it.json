@@ -57,6 +57,8 @@
         "comment": "Commento",
         "quickSelect": "Selezione Rapida",
         "presalesAvailable": "Opportunità disponibili",
+        "presalesSelected": "Selezionata",
+        "presalesNoOpps": "Nessuna opportunità trovata nelle voci recenti. Inserisci il numero di opportunità nel campo commento sopra.",
         "activityTypes": {
             "billable": "Fatturabile",
             "vacation": "Ferie",

@@ -463,6 +463,63 @@
             gap: 0.375rem;
         }
     }
+
+    // Presales opportunity picker panel
+    &__presales-opps {
+        background: #edf5ff;
+        border: 1px solid #0043ce;
+        border-radius: 6px;
+        padding: 0.625rem 0.75rem;
+    }
+
+    &__presales-opp-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        margin-top: 0.375rem;
+    }
+
+    &__presales-opp-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.625rem;
+        border: 1px solid #0043ce;
+        border-radius: 4px;
+        background: #ffffff;
+        cursor: pointer;
+        font-size: 0.8125rem;
+        font-family: inherit;
+        color: #161616;
+        transition: background 0.15s, border-color 0.15s;
+
+        &:hover {
+            background: #d0e2ff;
+            border-color: #0f62fe;
+        }
+
+        &--active {
+            background: #0043ce;
+            color: #ffffff;
+            border-color: #0043ce;
+
+            .cds--tag {
+                background: rgba(255,255,255,0.25);
+                color: #ffffff;
+            }
+        }
+    }
+
+    &__presales-opp-name {
+        font-weight: 600;
+    }
+
+    &__presales-no-opps {
+        font-size: 0.8125rem;
+        color: #525252;
+        font-style: italic;
+        margin-top: 0.25rem;
+    }
 }
 
 // Report

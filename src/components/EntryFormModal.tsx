@@ -217,29 +217,38 @@ export default function EntryFormModal({
                     value={values.comment}
                     onChange={(e) => setField('comment', e.target.value)}
                 />
-                {/*
-                  * Opportunity suggestions: shown as a datalist on the comment field
-                  * when presales type is selected and there are available opportunities.
-                  * The <TextArea> doesn't support the `list` attribute directly, so we
-                  * render a separate autocomplete <input> that is only shown for presales.
-                  */}
-                {values.activityType === 'presales' && presalesOpportunities.length > 0 && (
+                {/* Opportunity picker — visible whenever presales type is active */}
+                {values.activityType === 'presales' && (
                     <div className="entry-form__presales-opps">
-                        <span className="entry-form__templates-label">{t('entry.presalesAvailable')}:</span>
-                        <div className="entry-form__presales-opp-list">
-                            {presalesOpportunities.map((opp) => (
-                                <button
-                                    key={opp.opportunity}
-                                    type="button"
-                                    className="entry-form__presales-opp-btn"
-                                    onClick={() => setField('comment', opp.opportunity)}
-                                    title={`${opp.hoursLogged}h logged, ${opp.hoursRemaining}h remaining`}
-                                >
-                                    <span className="entry-form__presales-opp-name">{opp.opportunity}</span>
-                                    <Tag type="blue" size="sm">{opp.hoursLogged}h / 24h</Tag>
-                                </button>
-                            ))}
-                        </div>
+                        <span className="entry-form__templates-label">
+                            {t('entry.presalesAvailable')}
+                            {values.comment ? ` — ${t('entry.presalesSelected')}: ${values.comment}` : ''}:
+                        </span>
+                        {presalesOpportunities.length > 0 ? (
+                            <div className="entry-form__presales-opp-list">
+                                {presalesOpportunities.map((opp) => {
+                                    const isActive = values.comment === opp.opportunity;
+                                    return (
+                                        <button
+                                            key={opp.opportunity}
+                                            type="button"
+                                            className={`entry-form__presales-opp-btn${isActive ? ' entry-form__presales-opp-btn--active' : ''}`}
+                                            onClick={() => setField('comment', opp.opportunity)}
+                                            title={`${opp.hoursLogged}h logged, ${opp.hoursRemaining}h remaining`}
+                                        >
+                                            <span className="entry-form__presales-opp-name">{opp.opportunity}</span>
+                                            <Tag type={isActive ? 'gray' : 'blue'} size="sm">
+                                                {opp.hoursLogged}h / 24h
+                                            </Tag>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="entry-form__presales-no-opps">
+                                {t('entry.presalesNoOpps')}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>

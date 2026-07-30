@@ -9,6 +9,7 @@ export default defineConfig({
         // Injected at build time — available as __APP_VERSION__ and __APP_BUILD_DATE__
         __APP_VERSION__: JSON.stringify(pkg.version),
         __APP_BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+        __APP_BUILD_TIME__: JSON.stringify(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })),
     },
     plugins: [react()],
     server: {
