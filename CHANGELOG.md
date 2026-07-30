@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.6] - 2025-07-25
+
+### Fixed
+- Hook-order bug in WeekView: `onFormSuccess` previously referenced `values` and `formMode`
+  before `useEntryForm` was called. Refactored to pass submitted values as a parameter to
+  the callback instead. `formMode` and `editEntry` are now captured via refs so the callback
+  always reads the latest state without stale-closure issues.
+- Missing imports in WeekView: `ClaimEntry` (from `../services/api`) and `getWeekStart`
+  (from `../services/claims`) were used but not imported.
+
+### Added
+- Optimistic UI for delete: clicking Delete now removes the entry from the calendar
+  immediately without waiting for the Monday.com round-trip. A background refresh after
+  1500ms reconciles the displayed state.
+- Optimistic UI for add/edit was wired in the previous release but is now correctly
+  threaded through the `onFormSuccess(submitted)` parameter.
+- Auto-set `customer='PRESALES'` and `workItem='M.00556'` in the entry form when
+  activity type is changed to presales; fields are cleared when switching away.
+- Presales opportunity picker: two-step flow in the entry form — the Presales button
+  opens a separate picker modal where the user selects from existing opportunities
+  (with hours remaining) or types a custom one.
+
 ## [0.2.1] - 2025-07-24
 
 ### Fixed

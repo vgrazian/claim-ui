@@ -24,7 +24,7 @@ export function useEntryForm(
     boardId: string,
     groupId: string,
     userId: number,
-    onSuccess: () => void,
+    onSuccess: (submitted: FormValues) => void,
     editEntry?: { id: string } & FormValues | null,
     initialDate?: string
 ) {
@@ -47,10 +47,23 @@ export function useEntryForm(
     const setField = useCallback((field: keyof FormValues, value: string | number) => {
         setValues((prev) => {
             const next = { ...prev, [field]: value };
-            // Auto-set workItem for vacation/work_reduction
-            if (field === 'activityType' && (value === 'vacation' || value === 'work_reduction' || value === 'l104')) {
-                if (!prev.workItem || prev.workItem === 'M.00556') {
-                    next.workItem = 'M.00556';
+            if (field === 'activityType') {
+                // Auto-set workItem for time-off types
+                if (value === 'vacation' || value === 'work_reduction' || value === 'l104') {
+                    if (!prev.workItem || prev.workItem === 'M.00556') {
+                        next.workItem = 'M.00556';
+                    }
+                }
+                // Auto-set customer for presales — keeps Monday.com data consistent
+                if (value === 'presales') {
+                    next.customer = 'PRESALES';
+                    if (!prev.workItem || prev.workItem === '') {
+                        next.workItem = 'M.00556';
+                    }
+                }
+                // Clear the auto-set customer if switching away from presales
+                if (value !== 'presales' && prev.customer === 'PRESALES') {
+                    next.customer = '';
                 }
             }
             return next;
@@ -85,7 +98,7 @@ export function useEntryForm(
             } else {
                 await createItem(boardId, groupId, itemName, columnValues);
             }
-            onSuccess();
+            onSuccess(values);
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
         } finally {
@@ -98,7 +111,8 @@ export function useEntryForm(
         setError(null);
         try {
             await deleteItem(itemId);
-            onSuccess();
+            // For delete the caller handles the optimistic patch; pass empty sentinel.
+            onSuccess({ date: '', activityType: '', customer: '', workItem: '', hours: 0, comment: '' });
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
         } finally {

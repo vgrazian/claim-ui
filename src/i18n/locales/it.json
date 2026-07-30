@@ -59,6 +59,10 @@
         "presalesAvailable": "Opportunità disponibili",
         "presalesSelected": "Selezionata",
         "presalesNoOpps": "Nessuna opportunità trovata nelle voci recenti. Inserisci il numero di opportunità nel campo commento sopra.",
+        "presalesPickerTitle": "Seleziona numero opportunità",
+        "presalesPickerOr": "o inserisci manualmente",
+        "presalesPickerCustom": "Numero opportunità",
+        "presalesPickerPlaceholder": "es. OPP-12345",
         "activityTypes": {
             "billable": "Fatturabile",
             "vacation": "Ferie",

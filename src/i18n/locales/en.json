@@ -59,6 +59,10 @@
         "presalesAvailable": "Available opportunities",
         "presalesSelected": "Selected",
         "presalesNoOpps": "No opportunities found in your recent entries. Type the opportunity number in the comment field above.",
+        "presalesPickerTitle": "Select opportunity number",
+        "presalesPickerOr": "or enter manually",
+        "presalesPickerCustom": "Opportunity number",
+        "presalesPickerPlaceholder": "e.g. OPP-12345",
         "activityTypes": {
             "billable": "Billable",
             "vacation": "Vacation",

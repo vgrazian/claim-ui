@@ -26,10 +26,10 @@ import {
     List,
     Grid,
 } from '@carbon/icons-react';
-import { MondayUser } from '../services/api';
+import { MondayUser, ClaimEntry } from '../services/api';
 import { useWeekNavigation, useClaims, useBoard, useMonthlyL104, useRecentTemplates } from '../hooks/useData';
 import { useEntryForm } from '../hooks/useEntryForm';
-import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS, getMonthGridDates } from '../services/claims';
+import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS, getMonthGridDates, getWeekStart } from '../services/claims';
 import { useSettings } from '../context/SettingsContext';
 import EntryFormModal from '../components/EntryFormModal';
 
@@ -60,10 +60,33 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const monthDates = useMemo(() => getMonthGridDates(weekStart), [weekStart]);
     const queryDates = monthView ? monthDates : weekDates;
 
-    const { claims, loading, error, refresh } = useClaims(
+    const { claims: fetchedClaims, loading, error, refresh } = useClaims(
         weekStart, boardId, groupId, user.id,
         monthView ? monthDates : undefined
     );
+    // Optimistic overrides: entries added/edited/deleted locally before the
+    // background refresh completes. Keyed by entry id ('new-<ts>' for adds).
+    const [optimisticPatch, setOptimisticPatch] = useState<{
+        add?: ClaimEntry;
+        edit?: ClaimEntry;
+        deleteId?: string;
+    } | null>(null);
+
+    const claims = useMemo(() => {
+        if (!optimisticPatch) return fetchedClaims;
+        let result = [...fetchedClaims];
+        if (optimisticPatch.deleteId) {
+            result = result.filter((c) => c.id !== optimisticPatch.deleteId);
+        }
+        if (optimisticPatch.edit) {
+            result = result.map((c) => c.id === optimisticPatch.edit!.id ? optimisticPatch.edit! : c);
+        }
+        if (optimisticPatch.add) {
+            result = [...result, optimisticPatch.add];
+        }
+        return result;
+    }, [fetchedClaims, optimisticPatch]);
+
     const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id);
     const { templates: recentTemplates } = useRecentTemplates(
         boardId, groupId, user.id, settings.recentWeeksLookback
@@ -95,6 +118,13 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const [editEntry, setEditEntry] = useState<{ id: string; date: string; activityType: string; customer: string; workItem: string; hours: number; comment: string } | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+    // Refs so onFormSuccess can always read the latest values without being
+    // listed as a hook dependency (avoids stale closure / hook-order issues).
+    const formModeRef = React.useRef(formMode);
+    const editEntryRef = React.useRef(editEntry);
+    React.useEffect(() => { formModeRef.current = formMode; }, [formMode]);
+    React.useEffect(() => { editEntryRef.current = editEntry; }, [editEntry]);
+
     const claimsByDate = useMemo(() => {
         const map: Record<string, typeof claims> = {};
         queryDates.forEach((d) => {
@@ -113,11 +143,54 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         [queryDates, showWeekends]
     );
 
-    const onFormSuccess = useCallback(() => {
+    // onFormSuccess receives the submitted values as a parameter so it does not
+    // need to close over `values` (which is not yet declared at call-definition time).
+    // When called from handleDelete, submitted.date is empty — skip optimistic add/edit.
+    const onFormSuccess = useCallback((submitted: {
+        date: string;
+        activityType: string;
+        customer: string;
+        workItem: string;
+        hours: number;
+        comment: string;
+    }) => {
+        const mode = formModeRef.current;
+        const entry = editEntryRef.current;
+        if (!submitted.date) {
+            // Called from delete path — caller already set optimisticPatch.
+            setFormMode(null);
+            setEditEntry(null);
+            return;
+        }
+        if (mode === 'add') {
+            const optimistic: ClaimEntry = {
+                id: `optimistic-${Date.now()}`,
+                date: submitted.date,
+                activityType: submitted.activityType,
+                activityValue: 0,
+                customer: submitted.customer,
+                workItem: submitted.workItem,
+                hours: submitted.hours,
+                comment: submitted.comment || null,
+            };
+            setOptimisticPatch({ add: optimistic });
+        } else if (mode === 'edit' && entry) {
+            const optimistic: ClaimEntry = {
+                id: entry.id,
+                date: submitted.date,
+                activityType: submitted.activityType,
+                activityValue: 0,
+                customer: submitted.customer,
+                workItem: submitted.workItem,
+                hours: submitted.hours,
+                comment: submitted.comment || null,
+            };
+            setOptimisticPatch({ edit: optimistic });
+        }
         setFormMode(null);
         setEditEntry(null);
-        // Brief delay for Monday.com to index the new item
-        setTimeout(() => refresh(), 600);
+        // Background refresh reconciles with Monday.com; clears the optimistic patch
+        setTimeout(() => { refresh(); setOptimisticPatch(null); }, 1500);
     }, [refresh]);
 
     const { values, setField, saving, error: formError, clearError: clearFormError, submit, handleDelete, reset } = useEntryForm(
@@ -461,8 +534,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         danger
                         onRequestClose={() => setDeleteConfirmId(null)}
                         onRequestSubmit={() => {
+                            // Optimistic delete: remove immediately from local state,
+                            // then reconcile after the server call completes.
+                            setOptimisticPatch({ deleteId: deleteConfirmId });
                             handleDelete(deleteConfirmId);
                             setDeleteConfirmId(null);
+                            setTimeout(() => { refresh(); setOptimisticPatch(null); }, 1500);
                         }}
                     >
                         <p>{t('entry.deleteConfirm')}</p>
