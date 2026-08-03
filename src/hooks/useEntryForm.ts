@@ -44,6 +44,14 @@ export function useEntryForm(
         }
     }, [editEntry?.id]);
 
+    // When initialDate changes (user clicked a different day), sync it into
+    // the form values — but only when not editing an existing entry.
+    useEffect(() => {
+        if (initialDate && !editEntry) {
+            setValues((prev) => ({ ...prev, date: initialDate }));
+        }
+    }, [initialDate, editEntry]);
+
     const setField = useCallback((field: keyof FormValues, value: string | number) => {
         setValues((prev) => {
             const next = { ...prev, [field]: value };
@@ -73,9 +81,13 @@ export function useEntryForm(
     const clearError = useCallback(() => setError(null), []);
 
     const reset = useCallback(() => {
-        setValues(editEntry || defaultFormValues);
+        if (editEntry) {
+            setValues(editEntry);
+        } else {
+            setValues({ ...defaultFormValues, ...(initialDate ? { date: initialDate } : {}) });
+        }
         setError(null);
-    }, [editEntry]);
+    }, [editEntry, initialDate]);
 
     const submit = useCallback(async () => {
         setSaving(true);

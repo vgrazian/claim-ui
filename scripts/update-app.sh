@@ -46,9 +46,9 @@ cat > "$APP_PATH/Contents/Info.plist" << 'PLIST'
     <key>CFBundleName</key>
     <string>Claim UI</string>
     <key>CFBundleVersion</key>
-    <string>0.2.6</string>
+    <string>0.2.7</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.2.6</string>
+    <string>0.2.7</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>

@@ -1,6 +1,6 @@
 {
     "name": "claim-ui",
-    "version": "0.2.6",
+    "version": "0.2.7",
     "private": true,
     "description": "Web-based Monday.com claim management tool with IBM Carbon UI",
     "bin": {

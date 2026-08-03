@@ -1,8 +1,18 @@
 # Changelog
 
+## [0.2.7] - 2025-08-03
+
+### Fixed
+
+- Entry form date pre-population: when clicking "Add" on a specific day tile,
+  the form now correctly shows that day's date instead of always defaulting to
+  today. Added a `useEffect` in `useEntryForm` to sync `initialDate` changes
+  into form state, and fixed `reset()` to respect the initial date.
+
 ## [0.2.6] - 2025-07-25
 
 ### Fixed
+
 - Hook-order bug in WeekView: `onFormSuccess` previously referenced `values` and `formMode`
   before `useEntryForm` was called. Refactored to pass submitted values as a parameter to
   the callback instead. `formMode` and `editEntry` are now captured via refs so the callback
@@ -11,6 +21,7 @@
   (from `../services/claims`) were used but not imported.
 
 ### Added
+
 - Optimistic UI for delete: clicking Delete now removes the entry from the calendar
   immediately without waiting for the Monday.com round-trip. A background refresh after
   1500ms reconciles the displayed state.
@@ -25,12 +36,14 @@
 ## [0.2.1] - 2025-07-24
 
 ### Fixed
+
 - Calendar header "Add" button now pre-selects today only when today is visible in
   the current view. When navigating to a past or future week/month, it defaults to
   the first visible day instead of always using today's date. Per-day tile "Add"
   buttons were already correct and unchanged.
 
 ### Added
+
 - Presales quick-preset button in the entry form (alongside Vacation / L.104 / Holiday).
   Clicking it sets activity type to Presales, work item to M.00556, hours to 8h.
 - When activity type is Presales, a list of available opportunity numbers (derived from
@@ -38,7 +51,6 @@
   below the comment field as one-click chips. Clicking a chip fills the comment/opportunity
   field. If only one opportunity is available it is auto-filled when the preset is clicked.
 - New i18n keys: entry.presalesAvailable (EN + IT).
-
 
 All notable changes to this project will be documented in this file.
 
@@ -48,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2025-07-24
 
 ### Security
+
 - Bind Express server to 127.0.0.1 (loopback only) instead of 0.0.0.0 — prevents
   the Monday.com API proxy from being reachable by other devices on the LAN.
 - Restrict CORS to localhost origins only (ports 3001 and 5173); previously all
@@ -57,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   vector in POST /api/items/query and GET /api/items/recent.
 
 ### Fixed
+
 - useEntryForm: form values no longer remain stale when switching between entries
   without closing the modal. A useEffect now re-syncs values whenever editEntry.id
   changes.
@@ -72,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the safe e instanceof Error ? e.message : String(e) pattern.
 
 ### Changed
+
 - ACTIVITY_TYPES constant extracted to src/shared/activityTypes.mjs and shared
   between server/index.mjs and src/services/claims.ts, eliminating the previous
   duplication that could cause the two copies to diverge.
