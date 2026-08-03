@@ -223,7 +223,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                                         const isDay = dayColumns.includes(cell.info?.header);
                                                         const isWeekend = isDay && weekendDates.has(cell.info?.header);
                                                         return (
-                                                            <TableCell key={cell.id} className={isWeekend ? 'report-weekend-col' : ''}>
+                                                            <TableCell key={cell.id} className={(isWeekend ? 'report-weekend-col ' : '') + (isDay ? 'report-numeric ' : '') + (isTotal ? 'report-numeric' : '')}>
                                                                 {isMark ? (
                                                                     <input
                                                                         type="checkbox"
@@ -242,7 +242,7 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                                                             renderIcon={Copy}
                                                                             iconDescription={t('app.copy')}
                                                                             onClick={() => {
-                                                                                copyToClipboard(cell.value);
+                                                                                navigator.clipboard.writeText(cell.value);
                                                                                 setCopiedText(cell.value);
                                                                             }}
                                                                         />
@@ -270,11 +270,11 @@ export default function ReportView({ user, boardId, groupId }: Props) {
                                                 <strong>{t('report.totalHours')}</strong>
                                             </TableCell>
                                             {dayColumns.map((d) => (
-                                                <TableCell key={d}>
+                                                <TableCell key={d} className="report-numeric">
                                                     <strong>{dailyTotals[d] || 0}h</strong>
                                                 </TableCell>
                                             ))}
-                                            <TableCell>
+                                            <TableCell className="report-numeric">
                                                 <Tag type="blue">{grandTotal}h</Tag>
                                             </TableCell>
                                         </TableRow>

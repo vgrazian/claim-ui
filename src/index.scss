@@ -736,6 +736,46 @@
     background-color: #f4f7fb;
 }
 
+.report-numeric {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+}
+
+// Print styles for PDF export
+@media print {
+    .page-header__actions,
+    .quick-date-picker,
+    button,
+    input[type="checkbox"] {
+        display: none !important;
+    }
+
+    .report-weekend-col {
+        background-color: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .report-totals-row {
+        background-color: #f4f7fb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .presales-table-wrap {
+        overflow-x: visible;
+    }
+
+    table {
+        font-size: 11px;
+        page-break-inside: auto;
+    }
+
+    tr {
+        page-break-inside: avoid;
+    }
+}
+
 // Presales search
 .presales-search {
     display: flex;
