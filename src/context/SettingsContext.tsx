@@ -89,29 +89,43 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     );
 
     const refreshApiKeyStatus = useCallback(() => {
-        fetch('/api/config')
-            .then((r) => r.json())
-            .then((data) => {
-                setApiKeyStatus(data.hasApiKey ? 'found' : 'not_found');
-                setApiKeyMasked(data.apiKeyMasked || null);
-                if (data.userNameOverride !== undefined) {
-                    setSettings((prev) => ({
-                        ...prev,
-                        userNameOverride: data.userNameOverride,
-                    }));
-                }
-                if (data.showWeekendsDefault !== undefined) {
-                    setSettings((prev) => ({
-                        ...prev,
-                        showWeekendsDefault: data.showWeekendsDefault,
-                    }));
-                }
-            })
-            .catch(() => {
-                // Network error — don't flip to not_found; the key may still
-                // be valid, the server is just temporarily unreachable.
-                console.error('Failed to check API key status');
-            });
+        let attempt = 0;
+        const maxRetries = 3;
+
+        const tryFetch = () => {
+            fetch('/api/config')
+                .then((r) => r.json())
+                .then((data) => {
+                    setApiKeyStatus(data.hasApiKey ? 'found' : 'not_found');
+                    setApiKeyMasked(data.apiKeyMasked || null);
+                    if (data.userNameOverride !== undefined) {
+                        setSettings((prev) => ({
+                            ...prev,
+                            userNameOverride: data.userNameOverride,
+                        }));
+                    }
+                    if (data.showWeekendsDefault !== undefined) {
+                        setSettings((prev) => ({
+                            ...prev,
+                            showWeekendsDefault: data.showWeekendsDefault,
+                        }));
+                    }
+                })
+                .catch(() => {
+                    attempt++;
+                    if (attempt < maxRetries) {
+                        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+                        console.warn('Config fetch failed, retrying in ' + (delay / 1000) + 's (attempt ' + attempt + '/' + maxRetries + ')');
+                        setTimeout(tryFetch, delay);
+                    } else {
+                        // All retries exhausted — keep current state;
+                        // the key may still be valid, the server is just unreachable.
+                        console.error('Failed to check API key status after retries');
+                    }
+                });
+        };
+
+        tryFetch();
     }, []);
 
     const setApiKey = useCallback(async (key: string) => {

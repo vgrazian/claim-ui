@@ -31,7 +31,7 @@ function ErrorBanner({ message }: { message: string }) {
                 <h3>Connection Error</h3>
                 <p>{message}</p>
                 <p className="app-error-hint">
-                    Make sure the claim TUI is set up with a valid API key, then refresh.
+                    Check that the Claim UI server is running and try refreshing the page.
                 </p>
             </Tile>
         </div>
