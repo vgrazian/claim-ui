@@ -44,22 +44,37 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const { settings } = useSettings();
     const { weekStart, setWeekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
 
+    // Track the 1st of the displayed month independently from weekStart (which is always a Monday).
+    // This ensures vacation / L.104 monthly totals always refer to the month the user is looking at,
+    // even when weekStart snaps to a Monday in the previous month.
+    const [viewMonth, setViewMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
     // Month-level navigation callbacks
     const goToPreviousMonth = useCallback(() => {
+        setViewMonth((prev) => {
+            const d = new Date(prev);
+            d.setMonth(d.getMonth() - 1);
+            return d;
+        });
         setWeekStart((prev) => {
             const d = new Date(prev);
             d.setMonth(d.getMonth() - 1);
             return getWeekStart(d);
         });
-    }, [setWeekStart]);
+    }, []);
 
     const goToNextMonth = useCallback(() => {
+        setViewMonth((prev) => {
+            const d = new Date(prev);
+            d.setMonth(d.getMonth() + 1);
+            return d;
+        });
         setWeekStart((prev) => {
             const d = new Date(prev);
             d.setMonth(d.getMonth() + 1);
             return getWeekStart(d);
         });
-    }, [setWeekStart]);
+    }, []);
     const [showWeekends, setShowWeekends] = useState(settings.showWeekendsDefault);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [monthView, setMonthView] = useState(() => {
@@ -67,6 +82,13 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     });
     const [selectedDayDetail, setSelectedDayDetail] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+    // Wrapper that also resets viewMonth when jumping to today
+    const handleGoToToday = useCallback(() => {
+        const today = new Date();
+        setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+        goToToday();
+    }, [goToToday]);
 
     // Persist month view setting
     useEffect(() => {
@@ -104,12 +126,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         return result;
     }, [fetchedClaims, optimisticPatch]);
 
-    const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id, weekStart);
+    const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id, viewMonth);
 
     // Human-readable month label for tooltips (e.g. "August 2026")
     const monthLabel = useMemo(() => {
-        return weekStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-    }, [weekStart]);
+        return viewMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }, [viewMonth]);
 
     const { templates: recentTemplates } = useRecentTemplates(
         boardId, groupId, user.id, settings.recentWeeksLookback
@@ -325,6 +347,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                     value={formatDate(weekStart)}
                     onChange={(e) => {
                         const d = new Date(e.target.value + 'T00:00:00');
+                        setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1));
                         setWeekStart(getWeekStart(d));
                     }}
                     title="Jump to date"
@@ -334,7 +357,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         <Button kind="ghost" renderIcon={ArrowLeft} onClick={monthView ? goToPreviousMonth : goToPreviousWeek}>
                             {monthView ? t('week.previousMonth') : t('week.previousWeek')}
                         </Button>
-                        <Button kind="ghost" onClick={goToToday}>{t('week.today')}</Button>
+                        <Button kind="ghost" onClick={handleGoToToday}>{t('week.today')}</Button>
                         <Button kind="ghost" renderIcon={ArrowRight} onClick={monthView ? goToNextMonth : goToNextWeek}>
                             {monthView ? t('week.nextMonth') : t('week.nextWeek')}
                         </Button>
