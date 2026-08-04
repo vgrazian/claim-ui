@@ -182,9 +182,12 @@ app.post('/api/config', async (req, res) => {
         }
 
         saveConfig(config);
+        const hasKey = !!config.api_key;
+        console.log('[server] POST /api/config — saved config, hasApiKey:', hasKey,
+            hasKey ? 'masked=' + config.api_key.slice(0, 8) + '...' + config.api_key.slice(-4) : '');
         res.json({
             success: true,
-            hasApiKey: !!config.api_key,
+            hasApiKey: hasKey,
             apiKeyMasked: config.api_key
                 ? config.api_key.slice(0, 8) + '...' + config.api_key.slice(-4)
                 : null,
@@ -200,10 +203,12 @@ app.post('/api/config', async (req, res) => {
 app.delete('/api/config', (req, res) => {
     try {
         const config = loadConfig();
-        config.api_key = '';
+        delete config.api_key;
         saveConfig(config);
+        console.log('[server] DELETE /api/config — api_key removed from config');
         res.json({ success: true });
     } catch (e) {
+        console.error('[server] DELETE /api/config failed:', e.message);
         res.status(500).json({ error: e.message });
     }
 });

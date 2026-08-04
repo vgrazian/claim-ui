@@ -136,13 +136,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 body: JSON.stringify({ apiKey: key }),
             });
             const data = await res.json();
-            if (data.success === false || data.error) {
-                return { success: false, error: data.error || 'Failed to save API key' };
+            if (data.success === false || data.error || !data.hasApiKey) {
+                console.error('[setApiKey] server rejected:', data);
+                return { success: false, error: data.error || 'Failed to save API key (server did not persist it)' };
             }
-            setApiKeyStatus(data.hasApiKey ? 'found' : 'not_found');
+            console.log('[setApiKey] key persisted, hasApiKey=true, masked:', data.apiKeyMasked);
+            setApiKeyStatus('found');
             setApiKeyMasked(data.apiKeyMasked || null);
             return { success: true };
         } catch (e: any) {
+            console.error('[setApiKey] network error:', e.message);
             return { success: false, error: e.message };
         }
     }, []);
@@ -150,12 +153,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const clearApiKey = useCallback(async () => {
         try {
             const res = await fetch('/api/config', { method: 'DELETE' });
-            if (res.ok) {
+            const data = await res.json();
+            if (res.ok && data.success) {
+                console.log('[clearApiKey] server confirmed key removed');
                 setApiKeyStatus('not_found');
                 setApiKeyMasked(null);
+            } else {
+                console.error('[clearApiKey] server refused:', { ok: res.ok, data });
             }
-        } catch {
-            // Network error — keep current state, don't falsely clear
+        } catch (e) {
+            console.error('[clearApiKey] network error:', e);
         }
     }, []);
 
