@@ -15,6 +15,7 @@ interface SettingsContextType {
     updateSettings: (partial: Partial<Settings>) => void;
     apiKeyStatus: 'loading' | 'found' | 'not_found';
     setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>;
+    clearApiKey: () => Promise<void>;
     refreshApiKeyStatus: () => void;
     apiKeyMasked: string | null;
     apiUserName: string | null;
@@ -36,6 +37,7 @@ const SettingsContext = createContext<SettingsContextType>({
     updateSettings: () => { },
     apiKeyStatus: 'loading',
     setApiKey: async () => ({ success: false }),
+    clearApiKey: async () => { },
     refreshApiKeyStatus: () => { },
     apiKeyMasked: null, apiUserName: null,
     apiUserEmail: null,
@@ -105,7 +107,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                     }));
                 }
             })
-            .catch(() => setApiKeyStatus('not_found'));
+            .catch(() => {
+                // Network error — don't flip to not_found; the key may still
+                // be valid, the server is just temporarily unreachable.
+                console.error('Failed to check API key status');
+            });
     }, []);
 
     const setApiKey = useCallback(async (key: string) => {
@@ -127,6 +133,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const clearApiKey = useCallback(async () => {
+        try {
+            const res = await fetch('/api/config', { method: 'DELETE' });
+            if (res.ok) {
+                setApiKeyStatus('not_found');
+                setApiKeyMasked(null);
+            }
+        } catch {
+            // Network error — keep current state, don't falsely clear
+        }
+    }, []);
+
     useEffect(() => {
         i18n.changeLanguage(settings.language);
     }, []);
@@ -142,6 +160,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 updateSettings,
                 apiKeyStatus,
                 setApiKey,
+                clearApiKey,
                 refreshApiKeyStatus,
                 apiKeyMasked,
                 apiUserName,

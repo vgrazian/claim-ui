@@ -137,30 +137,42 @@ export default function EntryFormModal({
                         </Button>
                     </div>
 
-                    {recentTemplates.length > 0 && (
-                        <div className="entry-form__templates">
-                            <span className="entry-form__templates-label">{t('entry.quickSelect')}:</span>
-                            <div className="entry-form__templates-grid">
-                                {recentTemplates.slice(0, 8).map((tmpl, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        className="entry-form__template-card"
-                                        onClick={() => applyTemplate(tmpl)}
-                                        title={tmpl.comment || undefined}
-                                    >
-                                        <Tag type="green" size="sm">
-                                            {t(`entry.activityTypes.${tmpl.activityTypeName}`, tmpl.activityTypeName)}
-                                        </Tag>
-                                        <span className="entry-form__template-text">
-                                            {tmpl.customer || '—'} / {tmpl.workItem || '—'}
-                                        </span>
-                                        <span className="entry-form__template-hours">{tmpl.hours}h</span>
-                                    </button>
-                                ))}
+                    {recentTemplates.length > 0 && (() => {
+                        // Client-side safety net: exclude presales templates that
+                        // have already reached the 24h cap, even if the server
+                        // somehow included them.
+                        const safeTemplates = recentTemplates.filter((t) => {
+                            if (t.activityTypeName !== 'presales') return true;
+                            return t.hours < 24;
+                        });
+                        if (safeTemplates.length === 0) return null;
+                        return (
+                            <div className="entry-form__templates">
+                                <span className="entry-form__templates-label">{t('entry.quickSelect')}:</span>
+                                <div className="entry-form__templates-grid">
+                                    {safeTemplates.slice(0, 8).map((tmpl, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            className="entry-form__template-card"
+                                            onClick={() => applyTemplate(tmpl)}
+                                            title={tmpl.comment || undefined}
+                                        >
+                                            <Tag type="green" size="sm">
+                                                {t(`entry.activityTypes.${tmpl.activityTypeName}`, tmpl.activityTypeName)}
+                                            </Tag>
+                                            <span className="entry-form__template-text">
+                                                {tmpl.activityTypeName === 'presales'
+                                                    ? (tmpl.comment || tmpl.customer || '—')
+                                                    : `${tmpl.customer || '—'} / ${tmpl.workItem || '—'}`}
+                                            </span>
+                                            <span className="entry-form__template-hours">{tmpl.hours}h</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     <TextInput
                         id="entry-date"

@@ -196,6 +196,18 @@ app.post('/api/config', async (req, res) => {
     }
 });
 
+// Clear stored API key (logout)
+app.delete('/api/config', (req, res) => {
+    try {
+        const config = loadConfig();
+        config.api_key = '';
+        saveConfig(config);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Get current user
 app.get('/api/user', async (req, res) => {
     try {
@@ -386,14 +398,22 @@ app.get('/api/items/recent', async (req, res) => {
         // Validate before interpolation into GraphQL string
         const safeUserId = assertUserId(userId);
 
-        // Fetch items filtered by user (person column), sorted most-recent first
-        const queryParamsInline = `query_params: { rules: [{ column_id: "person", compare_value: ["person-${safeUserId}"], operator: any_of }], operator: and }`;
+        // Fetch ALL items for the user (paginated) so presales hours are
+        // accurately accumulated regardless of how many entries exist.
+        const allItems = [];
+        let cursor = null;
+        const PAGE_SIZE = 500;
+        do {
+            const cursorParam = cursor
+                ? `cursor: ${JSON.stringify(cursor)},`
+                : '';
+            const queryParamsInline = `query_params: { rules: [{ column_id: "person", compare_value: ["person-${safeUserId}"], operator: any_of }], operator: and }`;
 
-        const query = `
+            const query = `
       query($boardId: [ID!], $groupId: [String!], $limit: Int!) {
         boards(ids: $boardId) {
           groups(ids: $groupId) {
-            items_page(limit: $limit, ${queryParamsInline}) {
+            items_page(limit: $limit, ${cursorParam} ${queryParamsInline}) {
               cursor
               items {
                 id name
@@ -407,13 +427,18 @@ app.get('/api/items/recent', async (req, res) => {
       }
     `;
 
-        const data = await proxyMonday(query, {
-            boardId: [parseInt(boardId)],
-            groupId: [groupId],
-            limit: 500,
-        });
+            const data = await proxyMonday(query, {
+                boardId: [parseInt(boardId)],
+                groupId: [groupId],
+                limit: PAGE_SIZE,
+            });
 
-        const items = data?.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+            const page = data?.data?.boards?.[0]?.groups?.[0]?.items_page;
+            const items = page?.items || [];
+            allItems.push(...items);
+            cursor = page?.cursor;
+        } while (cursor);
+
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - days);
         const cutoffStr = cutoff.toISOString().slice(0, 10);
@@ -431,12 +456,12 @@ app.get('/api/items/recent', async (req, res) => {
         // remaining capacity. Keyed by comment (opportunity number).
         const presalesHours = new Map();
 
-        for (const item of items) {
+        for (const item of allItems) {
             const dateCol = item.column_values?.find((c) => c.id === 'date4');
             if (!dateCol?.value) continue;
             let dateStr = '';
             try { dateStr = JSON.parse(dateCol.value)?.date; } catch { continue; }
-            if (!dateStr || dateStr < cutoffStr) continue;
+            if (!dateStr) continue;
 
             const statusCol = item.column_values?.find((c) => c.id === 'status');
             let activityIdx = 0;
@@ -455,6 +480,8 @@ app.get('/api/items/recent', async (req, res) => {
             if (activityIdx === ACTIVITY_TYPES.presales) {
                 // For presales: dedupe by opportunity (comment) and accumulate real hours.
                 // This lets the client compute how many hours are left before the 24h cap.
+                // IMPORTANT: Do NOT apply the date cutoff for presales — we need ALL
+                // historical entries to accurately compute the 24h cap.
                 if (!comment) continue; // no opportunity number — not useful
                 presalesHours.set(comment, (presalesHours.get(comment) || 0) + hours);
                 const key = `presales::${comment}`;
@@ -465,7 +492,7 @@ app.get('/api/items/recent', async (req, res) => {
                         activityTypeName: 'presales',
                         customer,
                         workItem,
-                        hours,
+                        hours: presalesHours.get(comment), // accumulated total, not single item
                         comment,
                         lastUsed: dateStr,
                     });
@@ -479,6 +506,9 @@ app.get('/api/items/recent', async (req, res) => {
                 }
                 continue;
             }
+
+            // Non-presales: apply the date cutoff for recent-templates dedup
+            if (dateStr < cutoffStr) continue;
 
             // Non-presales: skip entries with no useful identifiers
             if (!customer && !workItem) continue;
@@ -499,10 +529,16 @@ app.get('/api/items/recent', async (req, res) => {
             }
         }
 
-        // Sort by most recently used
-        templates.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed));
+        // Filter out presales templates that have already reached the 24h cap
+        const filtered = templates.filter((t) => {
+            if (t.activityTypeName !== 'presales') return true;
+            return t.hours < 24;
+        });
 
-        res.json({ templates: templates.slice(0, 20) });
+        // Sort by most recently used
+        filtered.sort((a, b) => b.lastUsed.localeCompare(a.lastUsed));
+
+        res.json({ templates: filtered.slice(0, 20) });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

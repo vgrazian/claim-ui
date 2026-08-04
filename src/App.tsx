@@ -8,11 +8,13 @@ import {
     HeaderName,
     HeaderNavigation,
     HeaderMenuItem,
+    HeaderGlobalBar,
+    HeaderGlobalAction,
     Content,
     Loading,
     Tile,
 } from '@carbon/react';
-import { Calendar, Report, ChartLine, Settings } from '@carbon/icons-react';
+import { Calendar, Report, ChartLine, Settings, Logout } from '@carbon/icons-react';
 import { useUser, useBoard } from './hooks/useData';
 import { useSettings } from './context/SettingsContext';
 import WeekView from './pages/WeekView';
@@ -38,7 +40,7 @@ function ErrorBanner({ message }: { message: string }) {
 
 export default function App() {
     const { t } = useTranslation();
-    const { settings, apiKeyStatus, setApiUser } = useSettings();
+    const { settings, apiKeyStatus, setApiUser, clearApiKey } = useSettings();
     const { user, loading: userLoading, error: userError } = useUser();
     const { board, loading: boardLoading, error: boardError } = useBoard(settings.boardId);
 
@@ -86,6 +88,14 @@ export default function App() {
                                         <Settings size={16} /> {t('nav.settings')}
                                     </HeaderMenuItem>
                                 </HeaderNavigation>
+                                <HeaderGlobalBar>
+                                    <HeaderGlobalAction
+                                        aria-label={t('app.logout')}
+                                        onClick={() => clearApiKey()}
+                                    >
+                                        <Logout size={20} />
+                                    </HeaderGlobalAction>
+                                </HeaderGlobalBar>
                             </Header>
                             <Content>
                                 {loading ? (

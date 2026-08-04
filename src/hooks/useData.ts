@@ -101,7 +101,7 @@ export function useWeekNavigation(initialDate?: Date) {
     return { weekStart, setWeekStart, goToPreviousWeek, goToNextWeek, goToToday };
 }
 
-export function useMonthlyL104(boardId: string, groupId: string, userId: number | null) {
+export function useMonthlyL104(boardId: string, groupId: string, userId: number | null, monthDate?: Date) {
     const [l104Total, setL104Total] = useState<number>(0);
     const [vacationTotal, setVacationTotal] = useState<number>(0);
     const L104_MAX = 24;
@@ -117,13 +117,13 @@ export function useMonthlyL104(boardId: string, groupId: string, userId: number 
                     .map(itemToClaimEntry)
                     .filter((e: ClaimEntry | null): e is ClaimEntry => e !== null);
 
-                const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
+                const ref = monthDate || new Date();
+                const targetMonth = ref.getMonth();
+                const targetYear = ref.getFullYear();
 
                 const thisMonth = entries.filter((e) => {
                     const d = new Date(e.date + 'T00:00:00');
-                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                    return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
                 });
 
                 const l104 = thisMonth
@@ -138,7 +138,7 @@ export function useMonthlyL104(boardId: string, groupId: string, userId: number 
             .catch((e) => {
                 console.error('useMonthlyL104: failed to load monthly totals', e instanceof Error ? e.message : e);
             });
-    }, [boardId, groupId, userId]);
+    }, [boardId, groupId, userId, monthDate?.getTime()]);
 
     return { l104Total, vacationTotal, l104Max: L104_MAX };
 }

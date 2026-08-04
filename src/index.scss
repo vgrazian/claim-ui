@@ -504,7 +504,7 @@
             border-color: #0043ce;
 
             .cds--tag {
-                background: rgba(255,255,255,0.25);
+                background: rgba(255, 255, 255, 0.25);
                 color: #ffffff;
             }
         }
@@ -743,6 +743,7 @@
 
 // Print styles for PDF export
 @media print {
+
     .page-header__actions,
     .quick-date-picker,
     button,

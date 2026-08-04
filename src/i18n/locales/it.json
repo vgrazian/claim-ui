@@ -14,7 +14,8 @@
         "yes": "Sì",
         "no": "No",
         "copy": "Copia",
-        "copied": "Copiato negli appunti"
+        "copied": "Copiato negli appunti",
+        "logout": "Esci"
     },
     "nav": {
         "week": "Calendario",
@@ -26,6 +27,8 @@
         "title": "Calendario",
         "previousWeek": "Settimana Precedente",
         "nextWeek": "Settimana Successiva",
+        "previousMonth": "Mese Precedente",
+        "nextMonth": "Mese Successivo",
         "today": "Oggi",
         "monday": "Lun",
         "tuesday": "Mar",
@@ -42,7 +45,10 @@
         "gridView": "Vista griglia",
         "hideWeekends": "Nascondi weekend",
         "showWeekends": "Mostra weekend",
-        "close": "Chiudi"
+        "close": "Chiudi",
+        "vacationIn": "Giorni di ferie in",
+        "l104Week": "Ore L.104 nella settimana del",
+        "l104Month": "Ore L.104 in"
     },
     "entry": {
         "addTitle": "Aggiungi Voce",

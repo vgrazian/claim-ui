@@ -43,6 +43,23 @@ export default function WeekView({ user, boardId, groupId }: Props) {
     const { t } = useTranslation();
     const { settings } = useSettings();
     const { weekStart, setWeekStart, goToPreviousWeek, goToNextWeek, goToToday } = useWeekNavigation();
+
+    // Month-level navigation callbacks
+    const goToPreviousMonth = useCallback(() => {
+        setWeekStart((prev) => {
+            const d = new Date(prev);
+            d.setMonth(d.getMonth() - 1);
+            return getWeekStart(d);
+        });
+    }, [setWeekStart]);
+
+    const goToNextMonth = useCallback(() => {
+        setWeekStart((prev) => {
+            const d = new Date(prev);
+            d.setMonth(d.getMonth() + 1);
+            return getWeekStart(d);
+        });
+    }, [setWeekStart]);
     const [showWeekends, setShowWeekends] = useState(settings.showWeekendsDefault);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [monthView, setMonthView] = useState(() => {
@@ -87,22 +104,54 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         return result;
     }, [fetchedClaims, optimisticPatch]);
 
-    const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id);
+    const { l104Total, vacationTotal, l104Max } = useMonthlyL104(boardId, groupId, user.id, weekStart);
+
+    // Human-readable month label for tooltips (e.g. "August 2026")
+    const monthLabel = useMemo(() => {
+        return weekStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }, [weekStart]);
+
     const { templates: recentTemplates } = useRecentTemplates(
         boardId, groupId, user.id, settings.recentWeeksLookback
     );
 
-    // Derive presales opportunities with >= 8h remaining from recent templates.
-    // Groups presales entries by comment (opportunity number), sums their hours,
-    // and keeps only those that still have capacity (total logged < 24h).
+    // Derive presales opportunities with remaining capacity from recent templates.
+    // The server already accumulates all historical presales hours per opportunity
+    // (paginated across all items) and excludes any that have reached the 24h cap.
+    //
+    // We cross-reference with the current view's claims as defense-in-depth:
+    // if a template shows < 24h but claims in the current view push it over,
+    // we bump the logged hours so it gets filtered out.  Crucially, we do NOT
+    // add new opportunities from claims — only the server's template list is
+    // authoritative for which opportunities exist.
     const presalesOpportunities = useMemo(() => {
         const PRESALES_LIMIT = 24;
         const oppMap = new Map<string, number>();
+
+        // Start with hours from recent templates (server-side: already
+        // accumulated across ALL historical entries for each opp).
         recentTemplates
             .filter((t) => t.activityTypeName === 'presales' && t.comment)
             .forEach((t) => {
                 oppMap.set(t.comment, (oppMap.get(t.comment) || 0) + t.hours);
             });
+
+        // Defence-in-depth: if claims in the current view show MORE hours for
+        // an opportunity than the template does, bump the total so the client
+        // filters it out.  Never introduce new opportunities from claims alone.
+        const claimsByOpp = new Map<string, number>();
+        claims
+            .filter((c) => c.activityType === 'presales' && c.comment)
+            .forEach((c) => {
+                claimsByOpp.set(c.comment, (claimsByOpp.get(c.comment) || 0) + c.hours);
+            });
+        for (const [opp, claimsTotal] of claimsByOpp) {
+            const templateTotal = oppMap.get(opp);
+            if (templateTotal !== undefined) {
+                oppMap.set(opp, Math.max(templateTotal, claimsTotal));
+            }
+        }
+
         return Array.from(oppMap.entries())
             .filter(([, logged]) => logged < PRESALES_LIMIT)
             .map(([opp, logged]) => ({
@@ -111,7 +160,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                 hoursRemaining: PRESALES_LIMIT - logged,
             }))
             .sort((a, b) => a.hoursRemaining - b.hoursRemaining);
-    }, [recentTemplates]);
+    }, [recentTemplates, claims]);
 
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
@@ -189,8 +238,13 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         }
         setFormMode(null);
         setEditEntry(null);
-        // Background refresh reconciles with Monday.com; clears the optimistic patch
-        setTimeout(() => { refresh(); setOptimisticPatch(null); }, 1500);
+        // Background refresh reconciles with Monday.com. Wait for the refresh
+        // to complete before clearing the optimistic patch so the entry does
+        // not flicker (disappear and reappear).
+        setTimeout(async () => {
+            await refresh();
+            setOptimisticPatch(null);
+        }, 1500);
     }, [refresh]);
 
     const { values, setField, saving, error: formError, clearError: clearFormError, submit, handleDelete, reset } = useEntryForm(
@@ -233,10 +287,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
             if (formMode) return;
             switch (e.key) {
                 case 'ArrowLeft':
-                    goToPreviousWeek();
+                    if (monthView) goToPreviousMonth();
+                    else goToPreviousWeek();
                     break;
                 case 'ArrowRight':
-                    goToNextWeek();
+                    if (monthView) goToNextMonth();
+                    else goToNextWeek();
                     break;
                 case 'a':
                     setFormMode('add');
@@ -249,7 +305,7 @@ export default function WeekView({ user, boardId, groupId }: Props) {
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [goToPreviousWeek, goToNextWeek, goToToday, formMode]);
+    }, [goToPreviousWeek, goToNextWeek, goToToday, goToPreviousMonth, goToNextMonth, monthView, formMode]);
 
     if (error) {
         return (
@@ -275,12 +331,12 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                 />
                 <div>
                     <div className="page-header__actions">
-                        <Button kind="ghost" renderIcon={ArrowLeft} onClick={goToPreviousWeek}>
-                            {t('week.previousWeek')}
+                        <Button kind="ghost" renderIcon={ArrowLeft} onClick={monthView ? goToPreviousMonth : goToPreviousWeek}>
+                            {monthView ? t('week.previousMonth') : t('week.previousWeek')}
                         </Button>
                         <Button kind="ghost" onClick={goToToday}>{t('week.today')}</Button>
-                        <Button kind="ghost" renderIcon={ArrowRight} onClick={goToNextWeek}>
-                            {t('week.nextWeek')}
+                        <Button kind="ghost" renderIcon={ArrowRight} onClick={monthView ? goToNextMonth : goToNextWeek}>
+                            {monthView ? t('week.nextMonth') : t('week.nextWeek')}
                         </Button>
                         <Button kind="tertiary" renderIcon={Renew} onClick={() => { refresh(); setLastRefresh(new Date()); }}>
                             {t('app.refresh')}
@@ -351,15 +407,15 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                             </div>
                             <div className="week-summary__item week-summary__l104">
                                 <Tag type="teal" size="sm">Vacation</Tag>
-                                <span className="week-summary__hours">{vacationTotal}h</span>
+                                <span className="week-summary__hours" title={`${t('week.vacationIn')} ${monthLabel}`}>{vacationTotal}h</span>
                             </div>
                             <div className="week-summary__item week-summary__l104">
                                 <Tag type={l104Total > l104Max ? 'red' : 'teal'} size="sm">
                                     L.104
                                 </Tag>
                                 <div className="week-summary__l104-stack">
-                                    <span>week {weekL104Total}h</span>
-                                    <span>month {l104Total}/{l104Max}h</span>
+                                    <span title={`${t('week.l104Week')} ${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}>week {weekL104Total}h</span>
+                                    <span title={`${t('week.l104Month')} ${monthLabel}`}>month {l104Total}/{l104Max}h</span>
                                 </div>
                             </div>
                         </div>
@@ -539,7 +595,10 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                             setOptimisticPatch({ deleteId: deleteConfirmId });
                             handleDelete(deleteConfirmId);
                             setDeleteConfirmId(null);
-                            setTimeout(() => { refresh(); setOptimisticPatch(null); }, 1500);
+                            setTimeout(async () => {
+                                await refresh();
+                                setOptimisticPatch(null);
+                            }, 1500);
                         }}
                     >
                         <p>{t('entry.deleteConfirm')}</p>

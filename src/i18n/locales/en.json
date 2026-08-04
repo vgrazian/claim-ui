@@ -14,7 +14,8 @@
         "yes": "Yes",
         "no": "No",
         "copy": "Copy",
-        "copied": "Copied to clipboard"
+        "copied": "Copied to clipboard",
+        "logout": "Logout"
     },
     "nav": {
         "week": "Calendar",
@@ -26,6 +27,8 @@
         "title": "Calendar",
         "previousWeek": "Previous Week",
         "nextWeek": "Next Week",
+        "previousMonth": "Previous Month",
+        "nextMonth": "Next Month",
         "today": "Today",
         "monday": "Mon",
         "tuesday": "Tue",
@@ -42,7 +45,10 @@
         "gridView": "Grid view",
         "hideWeekends": "Hide weekends",
         "showWeekends": "Show weekends",
-        "close": "Close"
+        "close": "Close",
+        "vacationIn": "Vacation days in",
+        "l104Week": "L.104 hours in week starting",
+        "l104Month": "L.104 hours in"
     },
     "entry": {
         "addTitle": "Add Entry",
