@@ -90,7 +90,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     const refreshApiKeyStatus = useCallback(() => {
         let attempt = 0;
-        const maxRetries = 3;
+        const maxRetries = 5;
 
         const tryFetch = () => {
             fetch('/api/config')
@@ -114,13 +114,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 .catch(() => {
                     attempt++;
                     if (attempt < maxRetries) {
-                        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+                        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s, 16s, 32s
                         console.warn('Config fetch failed, retrying in ' + (delay / 1000) + 's (attempt ' + attempt + '/' + maxRetries + ')');
                         setTimeout(tryFetch, delay);
                     } else {
-                        // All retries exhausted — keep current state;
-                        // the key may still be valid, the server is just unreachable.
-                        console.error('Failed to check API key status after retries');
+                        // All retries exhausted — server is likely unreachable.
+                        // Fall back to 'not_found' so the user sees the API key setup
+                        // form instead of a broken app. When they re-enter the key,
+                        // the POST to /api/config will re-validate and persist it.
+                        console.error('Failed to check API key status after ' + maxRetries + ' retries — server may be unreachable');
+                        setApiKeyStatus('not_found');
                     }
                 });
         };

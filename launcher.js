@@ -5,7 +5,7 @@ const path = require('path');
 const http = require('http');
 
 const PORT = process.env.PORT || 3001;
-const URL = `http://localhost:${PORT}`;
+const URL = `http://127.0.0.1:${PORT}`;
 
 console.log('Starting Claim UI...');
 

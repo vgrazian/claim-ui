@@ -2,6 +2,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir, platform } from 'os';
+import { createServer } from 'http';
 import express from 'express';
 import cors from 'cors';
 import { ACTIVITY_TYPES, getActivityName } from '../src/shared/activityTypes.mjs';
@@ -59,7 +60,12 @@ function saveConfig(config) {
     if (!existsSync(dir)) {
         mkdirSync(dir, { recursive: true });
     }
-    writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    try {
+        writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    } catch (e) {
+        console.error('Failed to save config:', e.message);
+        throw e; // re-throw so callers can handle it
+    }
 }
 
 async function proxyMonday(query, variables = {}) {
@@ -90,9 +96,11 @@ const app = express();
 // reachable from arbitrary origins on the network.
 const ALLOWED_ORIGINS = [
     `http://localhost:${process.env.PORT || 3001}`,
+    `http://127.0.0.1:${process.env.PORT || 3001}`,
     'http://localhost:5173', // Vite dev server
-    'http://127.0.0.1:' + (process.env.PORT || 3001),
     'http://127.0.0.1:5173',
+    `http://[::1]:${process.env.PORT || 3001}`,
+    'http://[::1]:5173',
 ];
 app.use(cors({
     origin: (origin, callback) => {
@@ -559,8 +567,19 @@ app.get('*', (req, res, next) => {
 
 const PORT = process.env.PORT || 3001;
 // Bind to loopback only — never expose the Monday.com proxy to the LAN.
-app.listen(PORT, '127.0.0.1', () => {
+// Listen on both IPv4 and IPv6 loopback so the server is reachable regardless
+// of whether the browser resolves "localhost" to 127.0.0.1 or ::1.
+const httpServer = createServer(app);
+httpServer.listen(PORT, '127.0.0.1', () => {
     console.log(`Claim UI server running on http://127.0.0.1:${PORT}`);
     const apiKey = loadApiKey();
     console.log(`API key: ${apiKey ? 'loaded' : 'NOT FOUND'}`);
+});
+// Also try IPv6 loopback (fails silently on systems without IPv6 support)
+const httpServer6 = createServer(app);
+httpServer6.on('error', (err) => {
+    if (err.code !== 'EADDRNOTAVAIL') console.error('IPv6 listen error:', err.message);
+});
+httpServer6.listen(PORT, '::1', () => {
+    console.log(`Claim UI server also on http://[::1]:${PORT}`);
 });

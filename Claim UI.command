@@ -30,7 +30,7 @@ fi
 
 # ---- start Express server (serves dist/ on port 3001) ----
 PORT=3001
-URL="http://localhost:${PORT}"
+URL="http://127.0.0.1:${PORT}"
 
 node server/index.mjs &
 SERVER_PID=$!
