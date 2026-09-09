@@ -594,6 +594,9 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         error={formError}
                         onClearError={clearFormError}
                         onSubmit={submit}
+                        dailyHoursAlready={claims
+                            .filter((c) => c.date === values.date && c.id !== (editEntry?.id ?? ''))
+                            .reduce((sum, c) => sum + c.hours, 0)}
                         onSubmitMultiDay={async (dates: string[]) => {
                             for (const date of dates) {
                                 const activityValue = getActivityValue(values.activityType);

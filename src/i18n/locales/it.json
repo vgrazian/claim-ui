@@ -62,6 +62,8 @@
         "hours": "Ore",
         "comment": "Commento",
         "quickSelect": "Selezione Rapida",
+        "dailyCapTitle": "Limite giornaliero raggiunto",
+        "dailyCapMsg": "Hai già {{used}}h registrate in questo giorno. Aggiungere {{adding}}h supererebbe il limite giornaliero di 8h.",
         "dateFrom": "Da",
         "dateTo": "A",
         "multiDay": "Più giorni",

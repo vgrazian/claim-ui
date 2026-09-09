@@ -40,6 +40,11 @@ interface Props {
     /** Called instead of onSubmit when multi-day mode is active. Receives the full date list. */
     onSubmitMultiDay?: (dates: string[]) => Promise<void> | void;
     onClose: () => void;
+    /**
+     * Total hours already logged on values.date by OTHER entries (excluding the
+     * entry currently being edited). Used to enforce the 8h daily cap.
+     */
+    dailyHoursAlready?: number;
     recentTemplates?: RecentTemplate[];
     /** Presales opportunities with remaining capacity (total logged < 24h) */
     presalesOpportunities?: PresalesOpp[];
@@ -55,6 +60,7 @@ export default function EntryFormModal({
     onSubmit,
     onSubmitMultiDay,
     onClose,
+    dailyHoursAlready = 0,
     recentTemplates = [],
     presalesOpportunities = [],
 }: Props) {
@@ -68,6 +74,11 @@ export default function EntryFormModal({
     // Tracks in-flight multi-day submission to block premature close
     const multiDaySubmitting = useRef(false);
     const [multiDaySaving, setMultiDaySaving] = useState(false);
+
+    // Daily cap: warn and block when total hours for the day would exceed 8h.
+    // In edit mode dailyHoursAlready already excludes the current entry's hours.
+    // Multi-day: only check the "from" date (we only have existing data for it).
+    const dailyCapExceeded = !multiDay && (dailyHoursAlready + values.hours) > 8;
 
     /** Dates produced by the multi-day range (excluding weekends when skipWeekends is on). */
     const multiDayDates = useMemo(() => {
@@ -138,7 +149,7 @@ export default function EntryFormModal({
                         : t('app.save')
                 }
                 secondaryButtonText={t('app.cancel')}
-                primaryButtonDisabled={saving || multiDaySaving || (multiDay && multiDayDates.length === 0)}
+                primaryButtonDisabled={saving || multiDaySaving || dailyCapExceeded || (multiDay && multiDayDates.length === 0)}
                 onRequestClose={() => {
                     // Block close while multi-day submission is in flight
                     if (multiDaySubmitting.current) return;
@@ -166,6 +177,15 @@ export default function EntryFormModal({
                             subtitle={error}
                             lowContrast
                             onClose={onClearError}
+                        />
+                    )}
+                    {dailyCapExceeded && (
+                        <InlineNotification
+                            kind="warning"
+                            title={t('entry.dailyCapTitle')}
+                            subtitle={t('entry.dailyCapMsg', { used: dailyHoursAlready, adding: values.hours })}
+                            lowContrast
+                            hideCloseButton
                         />
                     )}
 

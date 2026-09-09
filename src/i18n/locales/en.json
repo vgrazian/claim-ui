@@ -62,6 +62,8 @@
         "hours": "Hours",
         "comment": "Comment",
         "quickSelect": "Quick Select",
+        "dailyCapTitle": "Daily limit reached",
+        "dailyCapMsg": "You already have {{used}}h logged on this day. Adding {{adding}}h would exceed the 8h daily limit.",
         "dateFrom": "From",
         "dateTo": "To",
         "multiDay": "Multiple days",
