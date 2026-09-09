@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] - 2025-09-09
+
+### Added
+
+- Illness quick-preset button in the Add Entry modal (sets activity type to illness, work item M.00556, 8 hours).
+- Multi-day add mode: toggle in Add Entry shows a date-range picker (From / To) with a Skip weekends checkbox; on confirm, one entry is bulk-created per day in the range.
+
 ## [0.3.0] - 2025-09-09
 
 ### Added

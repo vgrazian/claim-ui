@@ -26,10 +26,10 @@ import {
     List,
     Grid,
 } from '@carbon/icons-react';
-import { MondayUser, ClaimEntry } from '../services/api';
+import { MondayUser, ClaimEntry, createItem } from '../services/api';
 import { useWeekNavigation, useClaims, useBoard, useMonthlyL104, useRecentTemplates } from '../hooks/useData';
 import { useEntryForm } from '../hooks/useEntryForm';
-import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS, getMonthGridDates, getWeekStart } from '../services/claims';
+import { getWeekDates, formatDate, getActivityName, ACTIVITY_TYPE_KEYS, getMonthGridDates, getWeekStart, getActivityValue } from '../services/claims';
 import { useSettings } from '../context/SettingsContext';
 import EntryFormModal from '../components/EntryFormModal';
 
@@ -594,6 +594,28 @@ export default function WeekView({ user, boardId, groupId }: Props) {
                         error={formError}
                         onClearError={clearFormError}
                         onSubmit={submit}
+                        onSubmitMultiDay={async (dates: string[]) => {
+                            for (const date of dates) {
+                                const activityValue = getActivityValue(values.activityType);
+                                const columnValues = {
+                                    date4: { date },
+                                    status: { index: activityValue },
+                                    text__1: values.customer,
+                                    text8__1: values.workItem,
+                                    numbers__1: values.hours,
+                                    text2__1: values.comment || '',
+                                };
+                                const itemName = `${values.customer || 'Unknown'} - ${values.workItem || 'N/A'} - ${values.hours}h`;
+                                await createItem(boardId, groupId, itemName, columnValues);
+                            }
+                            setFormMode(null);
+                            setEditEntry(null);
+                            reset();
+                            setTimeout(async () => {
+                                await refresh();
+                                setOptimisticPatch(null);
+                            }, 1500);
+                        }}
                         onClose={() => {
                             setFormMode(null);
                             setEditEntry(null);
