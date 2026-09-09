@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     TextInput,
@@ -38,7 +38,7 @@ interface Props {
     onClearError: () => void;
     onSubmit: () => void;
     /** Called instead of onSubmit when multi-day mode is active. Receives the full date list. */
-    onSubmitMultiDay?: (dates: string[]) => void;
+    onSubmitMultiDay?: (dates: string[]) => Promise<void> | void;
     onClose: () => void;
     recentTemplates?: RecentTemplate[];
     /** Presales opportunities with remaining capacity (total logged < 24h) */
@@ -65,6 +65,9 @@ export default function EntryFormModal({
     const [multiDay, setMultiDay] = useState(false);
     const [multiDayEnd, setMultiDayEnd] = useState('');
     const [skipWeekends, setSkipWeekends] = useState(true);
+    // Tracks in-flight multi-day submission to block premature close
+    const multiDaySubmitting = useRef(false);
+    const [multiDaySaving, setMultiDaySaving] = useState(false);
 
     /** Dates produced by the multi-day range (excluding weekends when skipWeekends is on). */
     const multiDayDates = useMemo(() => {
@@ -135,11 +138,20 @@ export default function EntryFormModal({
                         : t('app.save')
                 }
                 secondaryButtonText={t('app.cancel')}
-                primaryButtonDisabled={saving || (multiDay && multiDayDates.length === 0)}
-                onRequestClose={onClose}
+                primaryButtonDisabled={saving || multiDaySaving || (multiDay && multiDayDates.length === 0)}
+                onRequestClose={() => {
+                    // Block close while multi-day submission is in flight
+                    if (multiDaySubmitting.current) return;
+                    onClose();
+                }}
                 onRequestSubmit={() => {
                     if (multiDay && multiDayDates.length > 0 && onSubmitMultiDay) {
-                        onSubmitMultiDay(multiDayDates);
+                        multiDaySubmitting.current = true;
+                        setMultiDaySaving(true);
+                        Promise.resolve(onSubmitMultiDay(multiDayDates)).finally(() => {
+                            multiDaySubmitting.current = false;
+                            setMultiDaySaving(false);
+                        });
                     } else {
                         onSubmit();
                     }
