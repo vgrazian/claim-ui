@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     TextInput,
@@ -37,6 +37,8 @@ interface Props {
     error: string | null;
     onClearError: () => void;
     onSubmit: () => void;
+    /** Called instead of onSubmit when multi-day mode is active. Receives the full date list. */
+    onSubmitMultiDay?: (dates: string[]) => void;
     onClose: () => void;
     recentTemplates?: RecentTemplate[];
     /** Presales opportunities with remaining capacity (total logged < 24h) */
@@ -51,6 +53,7 @@ export default function EntryFormModal({
     error,
     onClearError,
     onSubmit,
+    onSubmitMultiDay,
     onClose,
     recentTemplates = [],
     presalesOpportunities = [],
@@ -58,6 +61,28 @@ export default function EntryFormModal({
     const { t } = useTranslation();
     const [showOppPicker, setShowOppPicker] = useState(false);
     const [customOpp, setCustomOpp] = useState('');
+    // Multi-day add state
+    const [multiDay, setMultiDay] = useState(false);
+    const [multiDayEnd, setMultiDayEnd] = useState('');
+    const [skipWeekends, setSkipWeekends] = useState(true);
+
+    /** Dates produced by the multi-day range (excluding weekends when skipWeekends is on). */
+    const multiDayDates = useMemo(() => {
+        if (!multiDay || !multiDayEnd || multiDayEnd < values.date) return [];
+        const dates: string[] = [];
+        const cur = new Date(values.date + 'T00:00:00');
+        const end = new Date(multiDayEnd + 'T00:00:00');
+        while (cur <= end) {
+            const day = cur.getDay(); // 0=Sun, 6=Sat
+            if (!skipWeekends || (day !== 0 && day !== 6)) {
+                const mm = String(cur.getMonth() + 1).padStart(2, '0');
+                const dd = String(cur.getDate()).padStart(2, '0');
+                dates.push(`${cur.getFullYear()}-${mm}-${dd}`);
+            }
+            cur.setDate(cur.getDate() + 1);
+        }
+        return dates;
+    }, [multiDay, multiDayEnd, values.date, skipWeekends]);
 
     const activityTypeItems = ACTIVITY_TYPE_KEYS.map((key) => ({
         id: key,
@@ -104,11 +129,21 @@ export default function EntryFormModal({
             <Modal
                 open
                 modalHeading={mode === 'add' ? t('entry.addTitle') : t('entry.editTitle')}
-                primaryButtonText={t('app.save')}
+                primaryButtonText={
+                    multiDay && multiDayDates.length > 0
+                        ? t('entry.addMultiDayConfirm', { count: multiDayDates.length })
+                        : t('app.save')
+                }
                 secondaryButtonText={t('app.cancel')}
-                primaryButtonDisabled={saving}
+                primaryButtonDisabled={saving || (multiDay && multiDayDates.length === 0)}
                 onRequestClose={onClose}
-                onRequestSubmit={onSubmit}
+                onRequestSubmit={() => {
+                    if (multiDay && multiDayDates.length > 0 && onSubmitMultiDay) {
+                        onSubmitMultiDay(multiDayDates);
+                    } else {
+                        onSubmit();
+                    }
+                }}
                 size="md"
             >
                 <div className="entry-form">
@@ -131,6 +166,9 @@ export default function EntryFormModal({
                         </Button>
                         <Button kind="tertiary" size="sm" onClick={() => quickPreset('holiday')}>
                             Holiday
+                        </Button>
+                        <Button kind="tertiary" size="sm" onClick={() => quickPreset('illness')}>
+                            {t('entry.activityTypes.illness')}
                         </Button>
                         <Button kind="tertiary" size="sm" onClick={handlePresalesClick}>
                             {t('entry.activityTypes.presales')}
@@ -174,13 +212,62 @@ export default function EntryFormModal({
                         );
                     })()}
 
-                    <TextInput
-                        id="entry-date"
-                        labelText={t('entry.date')}
-                        type="date"
-                        value={values.date}
-                        onChange={(e) => setField('date', e.target.value)}
-                    />
+                    {/* Date — single or multi-day */}
+                    {mode === 'add' ? (
+                        <div className="entry-form__date-row">
+                            <TextInput
+                                id="entry-date"
+                                labelText={multiDay ? t('entry.dateFrom') : t('entry.date')}
+                                type="date"
+                                value={values.date}
+                                onChange={(e) => setField('date', e.target.value)}
+                            />
+                            <label className="entry-form__multiday-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={multiDay}
+                                    onChange={(e) => {
+                                        setMultiDay(e.target.checked);
+                                        if (!e.target.checked) setMultiDayEnd('');
+                                    }}
+                                />
+                                {' '}{t('entry.multiDay')}
+                            </label>
+                            {multiDay && (
+                                <>
+                                    <TextInput
+                                        id="entry-date-end"
+                                        labelText={t('entry.dateTo')}
+                                        type="date"
+                                        value={multiDayEnd}
+                                        onChange={(e) => setMultiDayEnd(e.target.value)}
+                                    />
+                                    <label className="entry-form__multiday-toggle">
+                                        <input
+                                            type="checkbox"
+                                            checked={skipWeekends}
+                                            onChange={(e) => setSkipWeekends(e.target.checked)}
+                                        />
+                                        {' '}{t('entry.skipWeekends')}
+                                    </label>
+                                    {multiDayDates.length > 0 && (
+                                        <p className="entry-form__multiday-preview">
+                                            {t('entry.multiDayPreview', { count: multiDayDates.length })}:{' '}
+                                            {multiDayDates.join(', ')}
+                                        </p>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <TextInput
+                            id="entry-date"
+                            labelText={t('entry.date')}
+                            type="date"
+                            value={values.date}
+                            onChange={(e) => setField('date', e.target.value)}
+                        />
+                    )}
 
                     <Dropdown
                         id="entry-activity"
