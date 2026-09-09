@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0] - 2025-09-09
+
+### Added
+
+- Copy day: per-day "Copy" button opens a preview modal to copy all entries from one day to any target date (bulk-create).
+- Repeat last week: toolbar button with preview modal to copy all entries from the previous week into the current week.
+- Report activity-type filter: chip toggles above the report table to include/exclude specific activity types from the pivot.
+- Report copy table as TSV: "Copy table" button exports the full visible pivot table to clipboard for Excel/Sheets.
+- Report marked-rows subtotal: a teal subtotal row in the footer shows totals for checked rows alongside the grand total.
+- Delete undo toast: a 5-second "Undo" toast appears after every deletion, re-creating the entry if clicked.
+- Month-view double-click: double-clicking a day tile in month view opens the Add entry form pre-seeded with that date.
+- Month detail panel "Add": the day detail panel in month view now includes an Add button pre-seeded with the selected date.
+- Template card expander: template quick-select cards now show the first 8 with a "+ N more" toggle to reveal the rest.
+- 8h shortcut button: ghost "8h" button beside the hours stepper in the entry form for a one-click reset to 8 hours.
+- Board ID editable in Settings: the Monday.com board ID is now a configurable field stored in the config file.
+- Server idle shutdown: Express server automatically shuts down after 30 minutes with no incoming requests.
+- Server health wait: the frontend polls /api/health on startup and shows a splash screen until the server is reachable.
+
+### Changed
+
+- PRESALES_HOURS_LIMIT extracted to a single constant in activityTypes.mjs; all 4 call sites updated.
+- useMonthlyL104 now queries only the target month's dates instead of fetching the full year.
+- Report date column headers now respect the active app language (Italian users see Italian day/month names).
+- clearMarks i18n key moved from settings namespace to report namespace.
+- Board ID is now read from config file (falling back to the built-in default 6500270039).
+
 ## [0.2.7] - 2025-08-03
 
 ### Fixed
