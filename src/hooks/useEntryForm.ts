@@ -65,8 +65,8 @@ export function useEntryForm(
                 // Auto-set customer for presales — keeps Monday.com data consistent
                 if (value === 'presales') {
                     next.customer = 'PRESALES';
-                    if (!prev.workItem || prev.workItem === '') {
-                        next.workItem = 'M.00556';
+                    if (!prev.workItem || prev.workItem === '' || prev.workItem === 'M.34212') {
+                        next.workItem = 'M.34212';
                     }
                 }
                 // Clear the auto-set customer if switching away from presales

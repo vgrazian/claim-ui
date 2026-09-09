@@ -121,7 +121,7 @@ export default function EntryFormModal({
     // Clicking the Presales button sets the type fields then opens the opp picker
     const handlePresalesClick = () => {
         setField('activityType', 'presales'); // also triggers auto-customer in hook
-        setField('workItem', 'M.00556');
+        setField('workItem', 'M.34212');
         setField('hours', 8);
         setCustomOpp('');
         setShowOppPicker(true);
